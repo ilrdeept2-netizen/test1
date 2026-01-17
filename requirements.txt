@@ -1,0 +1,10 @@
+# PDF to PowerPoint Converter Dependencies
+
+# PDF processing
+pdf2image>=1.16.0
+
+# PowerPoint creation
+python-pptx>=0.6.21
+
+# Image processing
+Pillow>=9.0.0
