@@ -1,43 +1,65 @@
-# Document Format Converter Suite
+# 특허 문서 변환기 🔄
 
-다양한 문서 형식 변환 도구 모음
+**Word/HWP 파일 → 한국특허청 HLT 형식 자동 변환**
 
-A collection of document format conversion tools
+특허 명세서를 수동으로 복사/붙여넣기 하지 마세요!
+파일만 업로드하면 자동으로 HLT로 변환됩니다.
 
-## 🔄 특허 문서 형식 변환기 (Patent Format Converter) - NEW!
+---
 
-Word/HWP 파일을 한국특허청 HLT 형식으로 자동 변환하는 도구입니다.
+## 📥 다운로드 및 설치
 
-Automatically converts Word/HWP files to Korean Patent Office HLT format.
+### 1️⃣ 파일 다운로드
 
-### 🎯 주요 기능 (Patent Converter Features)
+이 페이지 위쪽의 초록색 **"Code"** 버튼 클릭 → **"Download ZIP"** 클릭
 
-- ✅ Word (.docx) → HLT 변환
-- ✅ 한글 (.hwp) → HLT 변환
-- ✅ 자동 섹션 인식 (발명의 명칭, 기술분야, 청구범위 등)
-- ✅ 웹 인터페이스 제공 (드래그 앤 드롭)
-- ✅ CLI 도구 지원
-- ✅ K-Editor에서 바로 사용 가능한 XML 형식
+### 2️⃣ 압축 풀기
 
-### 🚀 특허 변환기 사용 방법 (Patent Converter Usage)
+다운로드한 ZIP 파일을 원하는 폴더에 압축 해제
 
-#### 방법 1: 웹 인터페이스 (권장)
+### 3️⃣ Python 설치 (없는 경우만)
 
+https://www.python.org/downloads/
+
+⚠️ **중요:** 설치할 때 "Add Python to PATH" 체크!
+
+---
+
+## 🚀 실행 방법 (초간단!)
+
+### Windows 사용자
+
+**`실행.bat`** 파일을 **더블클릭!**
+
+### Mac/Linux 사용자
+
+**`EASY_START.py`** 파일을 **더블클릭!**
+
+또는 터미널에서:
 ```bash
-python app.py
+python3 EASY_START.py
 ```
 
-브라우저에서 http://localhost:5000 접속 후 파일을 드래그 앤 드롭!
+---
 
-#### 방법 2: 명령줄 (CLI)
+## 💡 사용 방법
 
-```bash
-# Word 파일 변환
-python patent_format_converter.py 명세서.docx
+1. **실행.bat** 더블클릭
+2. 자동으로 브라우저가 열림 (안 열리면 http://127.0.0.1:5000 입력)
+3. **Word 파일(.docx)을 드래그 앤 드롭**
+4. **HLT 파일 자동 다운로드!**
+5. K-Editor에서 열어서 사용하세요
 
-# HWP 파일 변환
-python patent_format_converter.py 명세서.hwp -o 출력파일.hlt
-```
+---
+
+## 🎯 주요 기능
+
+- ✅ **Word (.docx) → HLT** 자동 변환
+- ✅ **한글 (.hwp) → HLT** 변환 지원
+- ✅ **자동 섹션 인식** (발명의 명칭, 기술분야, 청구범위 등)
+- ✅ **드래그 앤 드롭** 웹 인터페이스
+- ✅ **K-Editor 호환** XML 형식
+- ✅ **설치 자동화** - 필요한 프로그램 자동 설치
 
 ### 📝 특허 문서 작성 가이드
 
