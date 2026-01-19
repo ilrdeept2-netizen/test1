@@ -18,6 +18,9 @@ python-docx>=0.8.11
 olefile>=0.46
 # pyhwpx>=0.3.0  # Windows only - disabled for Linux compatibility
 
+# PDF file processing
+PyPDF2>=3.0.0
+
 # XML processing
 lxml>=4.9.0
 

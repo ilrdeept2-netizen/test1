@@ -244,7 +244,7 @@
         <div class="info-box">
             <h3>📋 지원 형식</h3>
             <ul>
-                <li>입력: <span class="format-badge">DOCX</span> <span class="format-badge">HWP</span></li>
+                <li>입력: <span class="format-badge">DOCX</span> <span class="format-badge">HWP</span> <span class="format-badge">PDF</span></li>
                 <li>출력: <span class="format-badge">HLT</span> (한국특허청 XML 형식)</li>
                 <li>자동 섹션 인식 (발명의 명칭, 기술분야, 청구범위 등)</li>
                 <li>K-Editor에서 바로 사용 가능</li>
@@ -255,8 +255,8 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📄</div>
                 <div class="upload-text">파일을 드래그하거나 클릭하여 선택</div>
-                <div class="upload-hint">Word (.docx) 또는 한글 (.hwp) 파일</div>
-                <input type="file" id="fileInput" name="file" accept=".docx,.hwp">
+                <div class="upload-hint">Word (.docx), 한글 (.hwp), PDF (.pdf) 파일</div>
+                <input type="file" id="fileInput" name="file" accept=".docx,.hwp,.pdf">
             </div>
 
             <div class="file-info" id="fileInfo">
@@ -378,7 +378,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = file.name.replace(/\.(docx|hwp)$/i, '.hlt');
+                    a.download = file.name.replace(/\.(docx|hwp|pdf)$/i, '.hlt');
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);

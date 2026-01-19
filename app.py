@@ -24,7 +24,7 @@ app.secret_key = 'patent-converter-secret-key-2026'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB 제한
 
 # 업로드 허용 파일 형식
-ALLOWED_EXTENSIONS = {'docx', 'hwp'}
+ALLOWED_EXTENSIONS = {'docx', 'hwp', 'pdf'}
 
 # 임시 디렉토리
 TEMP_DIR = Path(tempfile.gettempdir()) / 'patent_converter'
@@ -56,7 +56,7 @@ def convert():
             return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({'error': f'지원하지 않는 파일 형식입니다. (.docx, .hwp만 가능)'}), 400
+            return jsonify({'error': f'지원하지 않는 파일 형식입니다. (.docx, .hwp, .pdf만 가능)'}), 400
 
         # 안전한 파일명
         filename = secure_filename(file.filename)
