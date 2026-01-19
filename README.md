@@ -1,10 +1,78 @@
-# PDF to PowerPoint Converter
+# Document Format Converter Suite
+
+다양한 문서 형식 변환 도구 모음
+
+A collection of document format conversion tools
+
+## 🔄 특허 문서 형식 변환기 (Patent Format Converter) - NEW!
+
+Word/HWP 파일을 한국특허청 HLT 형식으로 자동 변환하는 도구입니다.
+
+Automatically converts Word/HWP files to Korean Patent Office HLT format.
+
+### 🎯 주요 기능 (Patent Converter Features)
+
+- ✅ Word (.docx) → HLT 변환
+- ✅ 한글 (.hwp) → HLT 변환
+- ✅ 자동 섹션 인식 (발명의 명칭, 기술분야, 청구범위 등)
+- ✅ 웹 인터페이스 제공 (드래그 앤 드롭)
+- ✅ CLI 도구 지원
+- ✅ K-Editor에서 바로 사용 가능한 XML 형식
+
+### 🚀 특허 변환기 사용 방법 (Patent Converter Usage)
+
+#### 방법 1: 웹 인터페이스 (권장)
+
+```bash
+python app.py
+```
+
+브라우저에서 http://localhost:5000 접속 후 파일을 드래그 앤 드롭!
+
+#### 방법 2: 명령줄 (CLI)
+
+```bash
+# Word 파일 변환
+python patent_format_converter.py 명세서.docx
+
+# HWP 파일 변환
+python patent_format_converter.py 명세서.hwp -o 출력파일.hlt
+```
+
+### 📝 특허 문서 작성 가이드
+
+변환이 제대로 작동하려면 문서에 다음과 같은 섹션 헤더를 사용하세요:
+
+```
+【발명의 명칭】
+【기술분야】
+【발명의 배경이 되는 기술】
+【해결하려는 과제】
+【과제의 해결 수단】
+【발명의 효과】
+【도면의 간단한 설명】
+【발명을 실시하기 위한 구체적인 내용】
+【청구범위】
+【요약】
+```
+
+### 💡 특허 변환 워크플로우
+
+1. Word 또는 한글로 특허 명세서 초안 작성
+2. 웹 인터페이스 또는 CLI로 HLT 변환
+3. K-Editor에서 HLT 파일 열기
+4. 최종 검토 및 XML 변환 (HLZ)
+5. 특허청 전자출원
+
+---
+
+## 📄 PDF to PowerPoint Converter
 
 구글 NotebookLM의 PDF 슬라이드를 편집 가능한 PowerPoint 프레젠테이션으로 변환하는 도구입니다.
 
 Convert Google NotebookLM PDF slides (or any PDF) to editable PowerPoint presentations.
 
-## 🌟 주요 기능 (Features)
+## 🌟 PDF 변환기 주요 기능 (PDF Converter Features)
 
 - ✅ PDF 파일을 편집 가능한 PPT로 변환
 - ✅ 고해상도 이미지 품질 지원
