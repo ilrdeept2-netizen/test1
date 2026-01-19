@@ -16,7 +16,7 @@ python-docx>=0.8.11
 
 # HWP file processing
 olefile>=0.46
-pyhwpx>=0.3.0
+# pyhwpx>=0.3.0  # Windows only - disabled for Linux compatibility
 
 # XML processing
 lxml>=4.9.0
