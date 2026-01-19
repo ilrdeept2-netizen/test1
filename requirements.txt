@@ -27,3 +27,4 @@ lxml>=4.9.0
 # Web interface (optional)
 flask>=2.3.0
 flask-cors>=4.0.0
+gunicorn>=21.2.0
