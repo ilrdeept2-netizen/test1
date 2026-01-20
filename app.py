@@ -115,15 +115,26 @@ def health():
 
 
 if __name__ == '__main__':
+    # Replit 환경 감지
+    port = int(os.environ.get('PORT', 5000))
+    is_replit = os.environ.get('REPL_ID') is not None
+
     print("=" * 60)
     print("특허 문서 형식 변환기 웹 서버")
     print("Patent Document Format Converter Web Server")
     print("=" * 60)
     print()
-    print("서버 주소: http://localhost:5000")
-    print("지원 형식: .docx, .hwp -> .hlt")
+
+    if is_replit:
+        print("🌐 Replit 환경에서 실행 중")
+        print(f"📱 모바일/데스크톱에서 접속 가능")
+        print(f"🔗 포트: {port}")
+    else:
+        print(f"서버 주소: http://localhost:{port}")
+
+    print("지원 형식: .docx, .hwp, .pdf -> .hlt")
     print()
     print("서버를 중지하려면 Ctrl+C를 누르세요")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=not is_replit)

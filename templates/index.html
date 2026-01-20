@@ -30,6 +30,35 @@
             width: 100%;
         }
 
+        /* 모바일 최적화 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 15px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .upload-area {
+                padding: 30px 20px;
+            }
+
+            .upload-icon {
+                font-size: 36px;
+            }
+
+            .btn {
+                padding: 12px 25px;
+                font-size: 15px;
+            }
+        }
+
         h1 {
             color: #333;
             text-align: center;
@@ -277,6 +306,7 @@
         <div class="message" id="message"></div>
 
         <div class="footer">
+            <p>📱 모바일/데스크톱 모두 지원 | 📱 Mobile & Desktop Compatible</p>
             <p>© 2026 Patent Format Converter</p>
             <p>Word/HWP → HLT 자동 변환 도구</p>
         </div>

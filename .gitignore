@@ -46,3 +46,9 @@ output/
 
 # Windows
 Thumbs.db
+
+# Replit
+.replit.lock
+.config/
+.cache/
+replit.nix.lock
