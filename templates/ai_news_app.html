@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>AI 뉴스 다이제스트</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --accent: #4a90d9;
+            --accent-light: #6bb3ff;
+            --text-primary: #ffffff;
+            --text-secondary: #b8c5d6;
+            --text-muted: #7a8ba3;
+            --border: #2a3f5f;
+            --success: #4ade80;
+            --warning: #fbbf24;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            padding: 20px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header h1 span {
+            font-size: 1.6rem;
+        }
+
+        .refresh-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .update-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Categories */
+        .categories {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            background: var(--bg-secondary);
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .category-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .category-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* News List */
+        .news-container {
+            padding: 12px;
+        }
+
+        .news-count {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 8px 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .news-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .news-card:active {
+            transform: scale(0.98);
+            background: var(--bg-secondary);
+        }
+
+        .news-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .news-icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .news-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-source {
+            font-size: 0.75rem;
+            color: var(--accent-light);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .news-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-summary {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .news-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .news-category {
+            font-size: 0.7rem;
+            background: var(--bg-secondary);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Loading */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state span {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.7rem;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        .nav-item span:first-child {
+            font-size: 1.4rem;
+        }
+
+        /* Pull to refresh indicator */
+        .pull-indicator {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .news-container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            .news-card {
+                padding: 20px;
+            }
+
+            .news-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">
+            <h1><span>🌅</span> AI 뉴스 다이제스트</h1>
+            <button class="refresh-btn" onclick="refreshNews()" id="refreshBtn">🔄</button>
+        </div>
+        <div class="update-info" id="updateInfo">로딩 중...</div>
+    </header>
+
+    <!-- Categories -->
+    <div class="categories" id="categories">
+        <button class="category-btn active" data-category="all">
+            <span>📋</span> 전체
+        </button>
+        <button class="category-btn" data-category="LLM">
+            <span>🤖</span> LLM
+        </button>
+        <button class="category-btn" data-category="Cloud">
+            <span>☁️</span> 클라우드
+        </button>
+        <button class="category-btn" data-category="OpenSource">
+            <span>🔓</span> 오픈소스
+        </button>
+        <button class="category-btn" data-category="Research">
+            <span>🔬</span> 연구
+        </button>
+        <button class="category-btn" data-category="News">
+            <span>📰</span> 뉴스
+        </button>
+    </div>
+
+    <!-- News Container -->
+    <main class="news-container">
+        <div class="news-count" id="newsCount"></div>
+        <div class="news-list" id="newsList">
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>AI 뉴스를 수집하고 있습니다...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <span>📰</span>
+            뉴스
+        </a>
+        <a href="#" class="nav-item" onclick="refreshNews(); return false;">
+            <span>🔄</span>
+            새로고침
+        </a>
+        <a href="#" class="nav-item" onclick="showInfo(); return false;">
+            <span>ℹ️</span>
+            정보
+        </a>
+    </nav>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let allNews = [];
+        let currentCategory = 'all';
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNews();
+            setupCategories();
+            registerServiceWorker();
+        });
+
+        // 뉴스 로드
+        async function loadNews() {
+            try {
+                const response = await fetch('/api/news');
+                const result = await response.json();
+
+                if (result.success) {
+                    allNews = result.data;
+                    renderNews(filterNews(currentCategory));
+                    updateInfo(result.last_updated, result.count);
+                }
+            } catch (error) {
+                showError('뉴스를 불러오는데 실패했습니다.');
+            }
+        }
+
+        // 뉴스 필터링
+        function filterNews(category) {
+            if (category === 'all') return allNews;
+            return allNews.filter(n => n.category === category);
+        }
+
+        // 뉴스 렌더링
+        function renderNews(news) {
+            const container = document.getElementById('newsList');
+            const countEl = document.getElementById('newsCount');
+
+            if (news.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span>📭</span>
+                        <p>이 카테고리에 뉴스가 없습니다.</p>
+                    </div>
+                `;
+                countEl.textContent = '';
+                return;
+            }
+
+            countEl.innerHTML = `📊 <strong>${news.length}</strong>개의 뉴스`;
+
+            container.innerHTML = news.map(item => `
+                <article class="news-card" onclick="openNews('${escapeHtml(item.link)}')">
+                    <div class="news-header">
+                        <div class="news-icon">${item.icon}</div>
+                        <div class="news-meta">
+                            <div class="news-source">${escapeHtml(item.source)}</div>
+                            <h2 class="news-title">${escapeHtml(item.title)}</h2>
+                        </div>
+                    </div>
+                    ${item.summary ? `<p class="news-summary">${escapeHtml(item.summary)}</p>` : ''}
+                    <div class="news-footer">
+                        <span class="news-time">🕐 ${item.published || '날짜 없음'}</span>
+                        <span class="news-category">${getCategoryName(item.category)}</span>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // 카테고리 설정
+        function setupCategories() {
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.dataset.category;
+                    renderNews(filterNews(currentCategory));
+                });
+            });
+        }
+
+        // 새로고침
+        async function refreshNews() {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('loading');
+
+            try {
+                await fetch('/api/refresh');
+                await loadNews();
+                showToast('뉴스가 업데이트되었습니다! ✨');
+            } catch (error) {
+                showToast('새로고침 실패 😢');
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        // 뉴스 열기
+        function openNews(url) {
+            window.open(url, '_blank');
+        }
+
+        // 업데이트 정보
+        function updateInfo(time, count) {
+            document.getElementById('updateInfo').textContent =
+                `마지막 업데이트: ${time} | 총 ${count}개 뉴스`;
+        }
+
+        // 토스트 메시지
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 에러 표시
+        function showError(message) {
+            document.getElementById('newsList').innerHTML = `
+                <div class="empty-state">
+                    <span>😢</span>
+                    <p>${message}</p>
+                    <button class="refresh-btn" onclick="loadNews()" style="margin-top: 16px; width: auto; padding: 12px 24px; border-radius: 8px;">
+                        다시 시도
+                    </button>
+                </div>
+            `;
+        }
+
+        // 정보 표시
+        function showInfo() {
+            alert('AI 뉴스 다이제스트 v1.0\n\n매일 아침 주요 AI/LLM 서비스들의\n최신 뉴스를 수집합니다.\n\n🤖 OpenAI, Anthropic, Google AI\n☁️ Microsoft AI, Meta AI\n🔓 Hugging Face, Mistral AI\n📰 TechCrunch, The Verge 등');
+        }
+
+        // 카테고리명 반환
+        function getCategoryName(cat) {
+            const names = {
+                'LLM': 'LLM',
+                'Cloud': '클라우드',
+                'OpenSource': '오픈소스',
+                'Research': '연구',
+                'News': '뉴스'
+            };
+            return names[cat] || cat;
+        }
+
+        // HTML 이스케이프
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Service Worker 등록
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('Service Worker registered'))
+                    .catch(err => console.log('SW registration failed:', err));
+            }
+        }
+    </script>
+</body>
+</html>
