@@ -1,0 +1,256 @@
+# 워크플로우 정의 파일
+# 멀티 에이전트 자동화 워크플로우 시나리오
+
+version: "1.0"
+
+workflows:
+  # 시나리오 1: 완전 자동화 특허 출원 지원
+  patent_application_support:
+    name: "특허 출원 지원 워크플로우"
+    description: "발명 아이디어 문서를 특허 명세서 초안으로 변환합니다"
+    trigger:
+      type: "manual"
+      input:
+        - name: "invention_document"
+          type: "file"
+          required: true
+          description: "발명 아이디어 문서 (docx, pdf, hwp)"
+        - name: "technology_field"
+          type: "string"
+          required: false
+          description: "기술 분야 (예: 인공지능, 반도체)"
+
+    steps:
+      - id: "parse_document"
+        agent: "document_processor"
+        action: "parse"
+        input:
+          file: "${input.invention_document}"
+        output: "parsed_content"
+
+      - id: "search_prior_art"
+        agent: "patent_searcher"
+        action: "search"
+        input:
+          content: "${steps.parse_document.output}"
+          field: "${input.technology_field}"
+        output: "prior_art_results"
+        parallel: true
+
+      - id: "analyze_similar_patents"
+        agent: "patent_analyzer"
+        action: "analyze"
+        input:
+          patents: "${steps.search_prior_art.output}"
+        output: "analysis_results"
+        depends_on:
+          - "search_prior_art"
+
+      - id: "generate_draft"
+        agent: "report_generator"
+        action: "generate_patent_draft"
+        input:
+          invention: "${steps.parse_document.output}"
+          prior_art: "${steps.analyze_similar_patents.output}"
+        output: "patent_draft"
+        depends_on:
+          - "parse_document"
+          - "analyze_similar_patents"
+
+      - id: "validate_quality"
+        agent: "quality_validator"
+        action: "validate"
+        input:
+          document: "${steps.generate_draft.output}"
+          type: "patent_specification"
+        output: "validated_draft"
+        depends_on:
+          - "generate_draft"
+
+    output:
+      patent_draft: "${steps.validate_quality.output}"
+      prior_art_report: "${steps.analyze_similar_patents.output}"
+
+  # 시나리오 2: 일일 동향 리포트
+  daily_trend_report:
+    name: "일일 동향 리포트 워크플로우"
+    description: "AI 및 특허 관련 일일 동향 리포트를 생성합니다"
+    trigger:
+      type: "scheduled"
+      schedule: "0 8 * * *"  # 매일 오전 8시
+
+    steps:
+      - id: "collect_ai_news"
+        agent: "news_collector"
+        action: "collect"
+        input:
+          sources:
+            - "openai"
+            - "anthropic"
+            - "google_ai"
+            - "meta_ai"
+          date: "${today}"
+        output: "ai_news"
+        parallel: true
+
+      - id: "search_recent_patents"
+        agent: "patent_searcher"
+        action: "search_recent"
+        input:
+          date_range: "last_24h"
+          fields:
+            - "인공지능"
+            - "기계학습"
+            - "자연어처리"
+        output: "recent_patents"
+        parallel: true
+
+      - id: "generate_digest"
+        agent: "report_generator"
+        action: "generate_digest"
+        input:
+          news: "${steps.collect_ai_news.output}"
+          patents: "${steps.search_recent_patents.output}"
+        output: "daily_digest"
+        depends_on:
+          - "collect_ai_news"
+          - "search_recent_patents"
+
+      - id: "validate_format"
+        agent: "quality_validator"
+        action: "validate"
+        input:
+          document: "${steps.generate_digest.output}"
+          type: "daily_report"
+        output: "validated_digest"
+        depends_on:
+          - "generate_digest"
+
+    output:
+      daily_report: "${steps.validate_format.output}"
+
+  # 시나리오 3: 특허 침해 분석
+  infringement_analysis:
+    name: "특허 침해 분석 워크플로우"
+    description: "대상 특허와 자사 기술의 침해 가능성을 분석합니다"
+    trigger:
+      type: "manual"
+      input:
+        - name: "target_patent_number"
+          type: "string"
+          required: true
+          description: "분석 대상 특허번호"
+        - name: "company_technology_document"
+          type: "file"
+          required: true
+          description: "자사 기술 문서"
+
+    steps:
+      - id: "fetch_patent_details"
+        agent: "patent_searcher"
+        action: "fetch_by_number"
+        input:
+          patent_number: "${input.target_patent_number}"
+        output: "target_patent"
+
+      - id: "parse_company_document"
+        agent: "document_processor"
+        action: "parse"
+        input:
+          file: "${input.company_technology_document}"
+        output: "company_technology"
+        parallel: true
+
+      - id: "analyze_claims"
+        agent: "patent_analyzer"
+        action: "analyze_claims"
+        input:
+          patent: "${steps.fetch_patent_details.output}"
+        output: "claim_analysis"
+        depends_on:
+          - "fetch_patent_details"
+
+      - id: "compare_technology"
+        agent: "patent_analyzer"
+        action: "compare"
+        input:
+          claims: "${steps.analyze_claims.output}"
+          technology: "${steps.parse_company_document.output}"
+        output: "comparison_results"
+        depends_on:
+          - "analyze_claims"
+          - "parse_company_document"
+
+      - id: "generate_infringement_report"
+        agent: "report_generator"
+        action: "generate_infringement_report"
+        input:
+          comparison: "${steps.compare_technology.output}"
+          patent: "${steps.fetch_patent_details.output}"
+        output: "infringement_report"
+        depends_on:
+          - "compare_technology"
+
+      - id: "legal_review"
+        agent: "quality_validator"
+        action: "validate"
+        input:
+          document: "${steps.generate_infringement_report.output}"
+          type: "legal_document"
+        output: "reviewed_report"
+        depends_on:
+          - "generate_infringement_report"
+
+    output:
+      analysis_report: "${steps.legal_review.output}"
+      risk_level: "${steps.compare_technology.output.risk_level}"
+
+  # 시나리오 4: 문서 일괄 변환
+  batch_document_conversion:
+    name: "문서 일괄 변환 워크플로우"
+    description: "여러 문서를 특허청 표준 형식으로 일괄 변환합니다"
+    trigger:
+      type: "manual"
+      input:
+        - name: "documents"
+          type: "file_list"
+          required: true
+          description: "변환할 문서 목록"
+        - name: "output_format"
+          type: "string"
+          default: "hlt"
+          description: "출력 형식 (hlt, xml)"
+
+    steps:
+      - id: "convert_documents"
+        agent: "document_processor"
+        action: "batch_convert"
+        input:
+          files: "${input.documents}"
+          format: "${input.output_format}"
+        output: "converted_documents"
+        parallel_foreach: true
+
+      - id: "validate_all"
+        agent: "quality_validator"
+        action: "batch_validate"
+        input:
+          documents: "${steps.convert_documents.output}"
+        output: "validation_results"
+        depends_on:
+          - "convert_documents"
+
+    output:
+      converted_files: "${steps.convert_documents.output}"
+      validation_report: "${steps.validate_all.output}"
+
+# 공통 설정
+settings:
+  max_parallel_agents: 3
+  default_timeout_minutes: 30
+  retry_policy:
+    max_attempts: 3
+    backoff_multiplier: 2
+  logging:
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

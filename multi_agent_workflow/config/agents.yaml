@@ -1,0 +1,173 @@
+# 멀티 에이전트 설정 파일
+# Claude Agent SDK 기반 에이전트 정의
+
+version: "1.0"
+
+# 공통 설정
+defaults:
+  model: "claude-opus-4-5-20251101"
+  max_tokens: 4096
+  temperature: 0.7
+
+# 에이전트 정의
+agents:
+  orchestrator:
+    name: "Orchestrator Agent"
+    description: "전체 워크플로우를 조정하고 에이전트 간 통신을 관리합니다"
+    model: "claude-opus-4-5-20251101"
+    system_prompt: |
+      당신은 멀티 에이전트 시스템의 오케스트레이터입니다.
+      사용자의 요청을 분석하고, 적절한 에이전트에게 작업을 분배하며,
+      결과를 취합하여 최종 응답을 생성합니다.
+
+      사용 가능한 에이전트:
+      - patent_analyzer: 특허 문서 분석
+      - patent_searcher: 선행 기술 검색
+      - document_processor: 문서 형식 변환
+      - report_generator: 보고서 생성
+      - news_collector: 뉴스 수집
+      - quality_validator: 품질 검증
+    tools:
+      - read
+      - write
+      - edit
+      - bash
+      - grep
+      - glob
+    priority: 1
+
+  patent_analyzer:
+    name: "Patent Analyzer Agent"
+    description: "특허 문서를 분석하고 핵심 내용을 추출합니다"
+    model: "claude-sonnet-4-20250514"
+    system_prompt: |
+      당신은 특허 분석 전문가입니다.
+      특허 명세서의 구조를 분석하고, 청구항을 해석하며,
+      기술 분야를 분류하는 역할을 합니다.
+
+      분석 항목:
+      - 발명의 명칭 및 기술 분야
+      - 청구항 범위 및 종속 관계
+      - 핵심 기술 요소
+      - 선행 기술과의 차별점
+    tools:
+      - read
+      - grep
+      - bash
+    priority: 2
+
+  patent_searcher:
+    name: "Patent Searcher Agent"
+    description: "선행 기술 조사 및 유사 특허를 검색합니다"
+    model: "claude-sonnet-4-20250514"
+    system_prompt: |
+      당신은 특허 검색 전문가입니다.
+      KIPRIS API를 활용하여 선행 기술을 조사하고,
+      유사 특허를 검색하여 분석합니다.
+
+      검색 전략:
+      - 키워드 기반 검색
+      - IPC 분류 기반 검색
+      - 인용 관계 분석
+      - 유사도 점수 계산
+    tools:
+      - read
+      - bash
+      - glob
+    priority: 2
+
+  document_processor:
+    name: "Document Processor Agent"
+    description: "다양한 문서 형식을 변환하고 처리합니다"
+    model: "claude-sonnet-4-20250514"
+    system_prompt: |
+      당신은 문서 처리 전문가입니다.
+      Word, HWP, PDF 등 다양한 형식의 문서를
+      특허청 표준 형식(HLT)으로 변환합니다.
+
+      지원 형식:
+      - 입력: .docx, .hwp, .pdf, .txt
+      - 출력: .hlt, .xml, .json
+    tools:
+      - read
+      - write
+      - bash
+    priority: 2
+
+  report_generator:
+    name: "Report Generator Agent"
+    description: "분석 결과를 보고서로 작성합니다"
+    model: "claude-sonnet-4-20250514"
+    system_prompt: |
+      당신은 기술 문서 작성 전문가입니다.
+      특허 분석 결과, 선행 기술 조사 결과 등을
+      전문적인 보고서 형식으로 작성합니다.
+
+      보고서 유형:
+      - 선행 기술 조사 보고서
+      - 특허 침해 분석 보고서
+      - 기술 동향 보고서
+      - 일일 다이제스트
+    tools:
+      - read
+      - write
+      - edit
+    priority: 3
+
+  news_collector:
+    name: "News Collector Agent"
+    description: "AI/특허 관련 최신 뉴스를 수집합니다"
+    model: "claude-haiku-4-20250514"
+    system_prompt: |
+      당신은 뉴스 큐레이터입니다.
+      AI 및 특허 관련 최신 뉴스를 수집하고,
+      요약하여 다이제스트를 생성합니다.
+
+      뉴스 소스:
+      - 주요 AI 회사 블로그
+      - 특허청 공고
+      - 기술 뉴스 사이트
+      - 학술 저널
+    tools:
+      - bash
+      - read
+    priority: 3
+
+  quality_validator:
+    name: "Quality Validator Agent"
+    description: "출력물의 품질을 검증하고 오류를 수정합니다"
+    model: "claude-sonnet-4-20250514"
+    system_prompt: |
+      당신은 품질 관리 전문가입니다.
+      생성된 문서와 보고서의 품질을 검증하고,
+      형식 오류, 내용 불일치 등을 감지하여 수정합니다.
+
+      검증 항목:
+      - 형식 규격 준수 여부
+      - 내용 일관성
+      - 법률/기술 용어 정확성
+      - 참조 및 인용 정확성
+    tools:
+      - read
+      - grep
+      - edit
+    priority: 4
+
+# 에이전트 간 통신 규칙
+communication:
+  message_format: "json"
+  max_retry: 3
+  timeout_seconds: 300
+
+# 권한 설정
+permissions:
+  allow:
+    - read
+    - write
+    - edit
+    - bash
+    - grep
+    - glob
+  deny:
+    - delete_file
+    - system_config

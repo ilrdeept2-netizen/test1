@@ -1,0 +1,48 @@
+{
+  "app": {
+    "name": "멀티 에이전트 워크플로우 시스템",
+    "version": "1.0.0",
+    "description": "Claude Agent SDK 기반 특허 자동화 멀티 에이전트 시스템"
+  },
+  "api": {
+    "anthropic": {
+      "model_default": "claude-opus-4-5-20251101",
+      "model_fast": "claude-sonnet-4-20250514",
+      "model_efficient": "claude-haiku-4-20250514",
+      "max_tokens": 4096,
+      "temperature": 0.7
+    },
+    "kipris": {
+      "base_url": "http://plus.kipris.or.kr/openapi/rest",
+      "timeout": 30
+    }
+  },
+  "agents": {
+    "max_parallel": 3,
+    "default_timeout_seconds": 300,
+    "retry_attempts": 3,
+    "retry_backoff": 2.0
+  },
+  "workflow": {
+    "max_steps": 20,
+    "step_timeout_seconds": 120,
+    "enable_parallel_execution": true
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/workflow.log"
+  },
+  "storage": {
+    "output_dir": "output",
+    "temp_dir": "temp",
+    "max_cache_size_mb": 100
+  },
+  "schedule": {
+    "daily_digest": {
+      "enabled": true,
+      "time": "08:00",
+      "timezone": "Asia/Seoul"
+    }
+  }
+}
