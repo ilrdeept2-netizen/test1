@@ -3,7 +3,7 @@ services:
     name: korean-patent-converter
     runtime: python
     buildCommand: pip install -r requirements_web.txt
-    startCommand: gunicorn korean_patent_converter_web:app --bind 0.0.0.0:$PORT
+    startCommand: gunicorn korean_patent_converter_web:app
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
