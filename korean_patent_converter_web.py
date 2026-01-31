@@ -547,8 +547,11 @@ def main():
     """메인 함수"""
     import argparse
 
+    # 환경변수에서 PORT 읽기 (클라우드 배포용)
+    default_port = int(os.environ.get('PORT', 5000))
+
     parser = argparse.ArgumentParser(description='한국특허서식 변환기 웹 서버')
-    parser.add_argument('-p', '--port', type=int, default=5000, help='포트 번호 (기본값: 5000)')
+    parser.add_argument('-p', '--port', type=int, default=default_port, help='포트 번호 (기본값: 5000)')
     parser.add_argument('-H', '--host', default='0.0.0.0', help='호스트 (기본값: 0.0.0.0)')
     parser.add_argument('-d', '--debug', action='store_true', help='디버그 모드')
 
