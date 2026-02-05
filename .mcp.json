@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "nps-business-enrollment": {
+      "command": "python",
+      "args": ["-m", "data_go_mcp.nps_business_enrollment"],
+      "env": {
+        "DATA_GO_KR_API_KEY": "여기에_API_키_입력"
+      }
+    }
+  }
+}
