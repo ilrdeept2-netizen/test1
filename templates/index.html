@@ -3,418 +3,860 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>특허 문서 형식 변환기 - Patent Format Converter</title>
+    <title>특허 명세서 변환기 - Word/HWP to HLT</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --error: #dc2626;
+            --error-light: #fee2e2;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --radius: 8px;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-900);
+            line-height: 1.6;
         }
 
-        .container {
+        .app-header {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .app-header p {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 2px;
         }
 
-        h1 {
-            color: #333;
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* ===== Upload Phase ===== */
+        .phase-upload { }
+        .phase-preview { display: none; }
+
+        .upload-card {
+            background: white;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+            padding: 32px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius);
+            padding: 48px 24px;
             text-align: center;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .info-box {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 5px;
-        }
-
-        .info-box h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .info-box ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .info-box li {
-            padding: 5px 0;
-            color: #555;
-            font-size: 14px;
-        }
-
-        .info-box li:before {
-            content: "✓ ";
-            color: #667eea;
-            font-weight: bold;
-            margin-right: 5px;
-        }
-
-        .upload-area {
-            border: 3px dashed #ddd;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s;
             cursor: pointer;
-            background: #fafafa;
+            transition: all 0.2s;
+            background: var(--gray-50);
         }
-
-        .upload-area:hover {
-            border-color: #667eea;
-            background: #f5f7ff;
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
         }
-
-        .upload-area.dragover {
-            border-color: #667eea;
-            background: #f5f7ff;
-            transform: scale(1.02);
+        .upload-zone svg {
+            width: 48px;
+            height: 48px;
+            color: var(--gray-500);
+            margin-bottom: 12px;
         }
-
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .upload-text {
-            color: #666;
+        .upload-zone.dragover svg { color: var(--primary); }
+        .upload-zone h3 {
             font-size: 16px;
-            margin-bottom: 10px;
+            color: var(--gray-700);
+            margin-bottom: 4px;
         }
-
-        .upload-hint {
-            color: #999;
+        .upload-zone p {
             font-size: 13px;
+            color: var(--gray-500);
         }
 
-        input[type="file"] {
+        .format-tags {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .format-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .file-selected {
             display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--success-light);
+            border-radius: var(--radius);
+            font-size: 14px;
+        }
+        .file-selected.active { display: flex; align-items: center; gap: 8px; }
+        .file-selected .name { font-weight: 600; color: var(--success); }
+        .file-selected .size { color: var(--gray-500); font-size: 12px; }
+        .file-selected .remove-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
         }
 
-        .file-info {
-            display: none;
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-            text-align: left;
-        }
-
-        .file-info.active {
+        .convert-btn {
             display: block;
-        }
-
-        .file-name {
-            color: #2e7d32;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .file-size {
-            color: #666;
-            font-size: 13px;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: background 0.2s;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        .btn:disabled {
-            background: #ccc;
+        .convert-btn:hover { background: var(--primary-dark); }
+        .convert-btn:disabled {
+            background: var(--gray-300);
             cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
         }
 
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
+        .usage-info {
+            margin-top: 24px;
+            background: white;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+            padding: 24px;
         }
-
-        .loading.active {
-            display: block;
+        .usage-info h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: var(--gray-700);
         }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+        .usage-info .section-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 6px;
+        }
+        .usage-info .section-item {
+            font-size: 13px;
+            color: var(--gray-700);
+            padding: 4px 0;
+        }
+        .usage-info .section-item::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
             border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        /* ===== Loading ===== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay.active { display: flex; }
+        .loading-box {
+            background: white;
+            border-radius: var(--radius);
+            padding: 32px 48px;
+            text-align: center;
+        }
+        .loading-spinner {
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== Preview Phase ===== */
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .preview-header h2 {
+            font-size: 18px;
+            flex: 1;
+        }
+        .preview-header .file-label {
+            font-size: 13px;
+            color: var(--gray-500);
+            background: var(--gray-100);
+            padding: 4px 12px;
+            border-radius: 20px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .action-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--gray-200);
+            background: white;
+            color: var(--gray-700);
+            transition: all 0.2s;
+        }
+        .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .action-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .action-btn.primary:hover { background: var(--primary-dark); }
+        .action-btn.back {
+            background: var(--gray-50);
         }
 
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-            text-align: center;
+        /* Section Cards */
+        .section-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .section-card.empty {
+            opacity: 0.5;
+        }
+
+        .section-card-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-card-header:hover {
+            background: var(--primary-light);
+        }
+        .section-card-header .toggle-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--gray-500);
+            margin-right: 8px;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .section-card.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .section-tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        .section-title-text {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .section-count {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-left: 8px;
+        }
+        .section-actions {
+            display: flex;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        .section-actions button {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            background: white;
+            color: var(--gray-700);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .section-actions button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .copy-ok {
+            color: var(--success) !important;
+            border-color: var(--success) !important;
+        }
+
+        .section-card-body {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .section-card.collapsed .section-card-body {
             display: none;
         }
 
-        .message.active {
-            display: block;
+        .section-textarea {
+            width: 100%;
+            min-height: 80px;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.7;
+            resize: vertical;
+            color: var(--gray-900);
+        }
+        .section-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .empty-section-hint {
+            font-size: 13px;
+            color: var(--gray-500);
+            font-style: italic;
         }
 
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 300;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
         }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); color: white; }
+        .toast.error { background: var(--error); color: white; }
 
-        .footer {
-            margin-top: 30px;
+        /* Summary strip */
+        .summary-strip {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .summary-item {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            flex: 1;
+            min-width: 120px;
             text-align: center;
-            color: #999;
+        }
+        .summary-item .label {
             font-size: 12px;
+            color: var(--gray-500);
+        }
+        .summary-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
         }
 
-        .format-badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            margin: 2px;
-            font-weight: bold;
+        /* Warning for unmatched content */
+        .unmatched-warning {
+            display: none;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--warning-light);
+            border: 1px solid #fbbf24;
+            border-radius: var(--radius);
+            font-size: 13px;
+            color: var(--warning);
+        }
+        .unmatched-warning.active { display: block; }
+
+        input[type="file"] { display: none; }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 16px; }
+            .upload-zone { padding: 32px 16px; }
+            .summary-strip { gap: 8px; }
+            .summary-item { min-width: 80px; padding: 8px 12px; }
+            .section-card-header { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔄 특허 문서 형식 변환기</h1>
-        <p class="subtitle">Patent Document Format Converter</p>
+    <header class="app-header">
+        <h1>특허 명세서 변환기</h1>
+        <p>Word(.docx) / HWP(.hwp, .hwpx) 파일을 한국특허청 HLT 형식으로 변환합니다</p>
+    </header>
 
-        <div class="info-box">
-            <h3>📋 지원 형식</h3>
-            <ul>
-                <li>입력: <span class="format-badge">DOCX</span> <span class="format-badge">HWP</span> <span class="format-badge">PDF</span></li>
-                <li>출력: <span class="format-badge">HLT</span> (한국특허청 XML 형식)</li>
-                <li>자동 섹션 인식 (발명의 명칭, 기술분야, 청구범위 등)</li>
-                <li>K-Editor에서 바로 사용 가능</li>
-            </ul>
-        </div>
+    <div class="main-container">
+        <!-- Phase 1: Upload -->
+        <div class="phase-upload" id="phaseUpload">
+            <div class="upload-card">
+                <div class="upload-zone" id="uploadZone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h3>파일을 여기에 드래그하거나 클릭하여 선택</h3>
+                    <p>특허 명세서 문서 파일을 업로드하세요</p>
+                    <div class="format-tags">
+                        <span class="format-tag">.docx</span>
+                        <span class="format-tag">.hwp</span>
+                        <span class="format-tag">.hwpx</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".docx,.hwp,.hwpx">
+                </div>
 
-        <form id="uploadForm" enctype="multipart/form-data">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">파일을 드래그하거나 클릭하여 선택</div>
-                <div class="upload-hint">Word (.docx), 한글 (.hwp), PDF (.pdf) 파일</div>
-                <input type="file" id="fileInput" name="file" accept=".docx,.hwp,.pdf">
+                <div class="file-selected" id="fileSelected">
+                    <span class="name" id="selectedFileName"></span>
+                    <span class="size" id="selectedFileSize"></span>
+                    <button class="remove-btn" id="removeFileBtn" title="파일 제거">&times;</button>
+                </div>
+
+                <button class="convert-btn" id="analyzeBtn" disabled>
+                    섹션 분석 및 미리보기
+                </button>
             </div>
 
-            <div class="file-info" id="fileInfo">
-                <div class="file-name" id="fileName"></div>
-                <div class="file-size" id="fileSize"></div>
+            <div class="usage-info">
+                <h3>자동 감지되는 특허 명세서 섹션 (【 】 괄호로 구분)</h3>
+                <div class="section-list">
+                    <div class="section-item">【발명의 명칭】</div>
+                    <div class="section-item">【기술분야】</div>
+                    <div class="section-item">【발명의 배경이 되는 기술】</div>
+                    <div class="section-item">【선행기술문헌】</div>
+                    <div class="section-item">【발명의 내용】</div>
+                    <div class="section-item">【해결하려는 과제】</div>
+                    <div class="section-item">【과제의 해결 수단】</div>
+                    <div class="section-item">【발명의 효과】</div>
+                    <div class="section-item">【도면의 간단한 설명】</div>
+                    <div class="section-item">【발명을 실시하기 위한 구체적인 내용】</div>
+                    <div class="section-item">【부호의 설명】</div>
+                    <div class="section-item">【특허청구범위】</div>
+                    <div class="section-item">【요약서】</div>
+                    <div class="section-item">【대표도면】</div>
+                </div>
             </div>
-
-            <button type="submit" class="btn" id="convertBtn" disabled>
-                변환하기
-            </button>
-        </form>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div>변환 중입니다...</div>
         </div>
 
-        <div class="message" id="message"></div>
+        <!-- Phase 2: Preview & Edit -->
+        <div class="phase-preview" id="phasePreview">
+            <div class="preview-header">
+                <h2>섹션 분석 결과</h2>
+                <span class="file-label" id="previewFileName"></span>
+            </div>
 
-        <div class="footer">
-            <p>© 2026 Patent Format Converter</p>
-            <p>Word/HWP → HLT 자동 변환 도구</p>
+            <div class="summary-strip" id="summaryStrip"></div>
+
+            <div class="unmatched-warning" id="unmatchedWarning">
+                섹션 헤더(【 】)가 감지되지 않은 내용이 있습니다. 아래 "_header" 섹션에서 확인하고 필요시 다른 섹션으로 내용을 옮겨주세요.
+            </div>
+
+            <div class="action-bar">
+                <button class="action-btn back" id="backBtn">다른 파일 선택</button>
+                <button class="action-btn" id="expandAllBtn">모두 펼치기</button>
+                <button class="action-btn" id="collapseAllBtn">모두 접기</button>
+                <button class="action-btn primary" id="downloadHltBtn">HLT 파일 다운로드</button>
+            </div>
+
+            <div class="section-cards" id="sectionCards"></div>
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <div>문서를 분석하고 있습니다...</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
     <script>
-        const uploadArea = document.getElementById('uploadArea');
+    (function() {
+        // Elements
         const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const convertBtn = document.getElementById('convertBtn');
-        const uploadForm = document.getElementById('uploadForm');
-        const loading = document.getElementById('loading');
-        const message = document.getElementById('message');
+        const uploadZone = document.getElementById('uploadZone');
+        const fileSelected = document.getElementById('fileSelected');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const selectedFileSize = document.getElementById('selectedFileSize');
+        const removeFileBtn = document.getElementById('removeFileBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const phaseUpload = document.getElementById('phaseUpload');
+        const phasePreview = document.getElementById('phasePreview');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const sectionCards = document.getElementById('sectionCards');
+        const summaryStrip = document.getElementById('summaryStrip');
+        const unmatchedWarning = document.getElementById('unmatchedWarning');
+        const previewFileName = document.getElementById('previewFileName');
+        const backBtn = document.getElementById('backBtn');
+        const expandAllBtn = document.getElementById('expandAllBtn');
+        const collapseAllBtn = document.getElementById('collapseAllBtn');
+        const downloadHltBtn = document.getElementById('downloadHltBtn');
+        const toast = document.getElementById('toast');
 
-        // 파일 선택 영역 클릭
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+        let currentFile = null;
+        let parsedSections = null;
 
-        // 파일 선택 처리
-        fileInput.addEventListener('change', handleFileSelect);
+        // Section display order and Korean names
+        const SECTION_ORDER = [
+            { id: 'invention-title', name: '발명의 명칭' },
+            { id: 'technical-field', name: '기술분야' },
+            { id: 'background-art', name: '발명의 배경이 되는 기술' },
+            { id: 'prior-art-documents', name: '선행기술문헌' },
+            { id: 'disclosure', name: '발명의 내용' },
+            { id: 'technical-problem', name: '해결하려는 과제' },
+            { id: 'technical-solution', name: '과제의 해결 수단' },
+            { id: 'advantageous-effects', name: '발명의 효과' },
+            { id: 'description-of-drawings', name: '도면의 간단한 설명' },
+            { id: 'detailed-description', name: '발명을 실시하기 위한 구체적인 내용' },
+            { id: 'reference-signs', name: '부호의 설명' },
+            { id: 'claims', name: '특허청구범위' },
+            { id: 'abstract', name: '요약서' },
+            { id: 'representative-drawing', name: '대표도면' },
+        ];
 
-        // 드래그 앤 드롭
-        uploadArea.addEventListener('dragover', (e) => {
+        // Upload zone events
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            uploadZone.classList.add('dragover');
         });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
         });
-
-        uploadArea.addEventListener('drop', (e) => {
+        uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                handleFileSelect();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                setFile(e.dataTransfer.files[0]);
             }
         });
 
-        function handleFileSelect() {
-            const file = fileInput.files[0];
-            if (file) {
-                // 파일 정보 표시
-                fileName.textContent = `📎 ${file.name}`;
-                fileSize.textContent = `크기: ${formatFileSize(file.size)}`;
-                fileInfo.classList.add('active');
-                convertBtn.disabled = false;
-
-                // 업로드 영역 스타일 변경
-                uploadArea.style.borderColor = '#4caf50';
-                uploadArea.style.background = '#f1f8f4';
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                setFile(fileInput.files[0]);
             }
-        }
+        });
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
+        removeFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearFile();
+        });
 
-        // 폼 제출 처리
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const file = fileInput.files[0];
-            if (!file) {
-                showMessage('파일을 선택해주세요.', 'error');
+        function setFile(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['docx', 'hwp', 'hwpx'].includes(ext)) {
+                showToast('.docx, .hwp, .hwpx 파일만 지원합니다.', 'error');
                 return;
             }
+            currentFile = file;
+            selectedFileName.textContent = file.name;
+            selectedFileSize.textContent = formatSize(file.size);
+            fileSelected.classList.add('active');
+            analyzeBtn.disabled = false;
+        }
 
-            // UI 업데이트
-            convertBtn.disabled = true;
-            loading.classList.add('active');
-            message.classList.remove('active');
+        function clearFile() {
+            currentFile = null;
+            fileInput.value = '';
+            fileSelected.classList.remove('active');
+            analyzeBtn.disabled = true;
+        }
 
-            // FormData 생성
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            loadingOverlay.classList.add('active');
+
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', currentFile);
 
             try {
-                const response = await fetch('/convert', {
+                const resp = await fetch('/api/analyze', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
                 });
 
-                loading.classList.remove('active');
+                loadingOverlay.classList.remove('active');
 
-                if (response.ok) {
-                    // 파일 다운로드
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = file.name.replace(/\.(docx|hwp|pdf)$/i, '.hlt');
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
-                    showMessage('✓ 변환이 완료되었습니다! HLT 파일이 다운로드됩니다.', 'success');
-
-                    // 폼 리셋
-                    setTimeout(() => {
-                        resetForm();
-                    }, 3000);
-                } else {
-                    const error = await response.json();
-                    showMessage(`오류: ${error.error || '변환에 실패했습니다.'}`, 'error');
-                    convertBtn.disabled = false;
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    showToast(err.error || '분석에 실패했습니다.', 'error');
+                    return;
                 }
-            } catch (error) {
-                loading.classList.remove('active');
-                showMessage(`네트워크 오류: ${error.message}`, 'error');
-                convertBtn.disabled = false;
+
+                const data = await resp.json();
+                parsedSections = data.sections;
+                showPreview(data);
+            } catch (e) {
+                loadingOverlay.classList.remove('active');
+                showToast('서버 연결 오류: ' + e.message, 'error');
             }
         });
 
-        function showMessage(text, type) {
-            message.textContent = text;
-            message.className = `message ${type} active`;
+        // Show preview phase
+        function showPreview(data) {
+            phaseUpload.style.display = 'none';
+            phasePreview.style.display = 'block';
+            previewFileName.textContent = currentFile.name;
+
+            // Summary
+            const totalSections = Object.keys(data.sections).filter(k => k !== '_header').length;
+            const totalParagraphs = Object.values(data.sections).reduce((s, arr) => s + arr.length, 0);
+            const hasUnmatched = '_header' in data.sections && data.sections['_header'].length > 0;
+
+            summaryStrip.innerHTML = `
+                <div class="summary-item">
+                    <div class="label">감지된 섹션</div>
+                    <div class="value">${totalSections}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">총 단락 수</div>
+                    <div class="value">${totalParagraphs}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">미분류 내용</div>
+                    <div class="value" style="color:${hasUnmatched ? 'var(--warning)' : 'var(--success)'}">${hasUnmatched ? data.sections['_header'].length + '건' : '없음'}</div>
+                </div>
+            `;
+
+            unmatchedWarning.classList.toggle('active', hasUnmatched);
+
+            // Build section cards
+            renderSectionCards(data.sections);
         }
 
-        function resetForm() {
-            uploadForm.reset();
-            fileInfo.classList.remove('active');
-            convertBtn.disabled = true;
-            uploadArea.style.borderColor = '#ddd';
-            uploadArea.style.background = '#fafafa';
-            message.classList.remove('active');
+        function renderSectionCards(sections) {
+            sectionCards.innerHTML = '';
+
+            // Unmatched header content first (if any)
+            if (sections['_header'] && sections['_header'].length > 0) {
+                sectionCards.appendChild(
+                    createSectionCard('_header', '미분류 (섹션 헤더 미감지)', sections['_header'], true)
+                );
+            }
+
+            // Ordered sections
+            for (const def of SECTION_ORDER) {
+                const content = sections[def.id] || [];
+                sectionCards.appendChild(
+                    createSectionCard(def.id, def.name, content, content.length === 0)
+                );
+            }
         }
+
+        function createSectionCard(sectionId, sectionName, content, isEmpty) {
+            const card = document.createElement('div');
+            card.className = 'section-card' + (isEmpty ? ' collapsed empty' : '');
+            card.dataset.sectionId = sectionId;
+
+            const paragraphCount = content.length;
+            const textContent = content.join('\n');
+
+            card.innerHTML = `
+                <div class="section-card-header">
+                    <svg class="toggle-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="section-tag">${sectionId === '_header' ? 'UNMATCHED' : sectionId}</span>
+                    <span class="section-title-text">${sectionName}</span>
+                    <span class="section-count">${paragraphCount}개 단락</span>
+                    <div class="section-actions">
+                        <button class="copy-btn" data-section="${sectionId}" title="이 섹션 내용 복사">복사</button>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <textarea class="section-textarea" data-section="${sectionId}"
+                        rows="${Math.min(Math.max(textContent.split('\n').length + 1, 3), 15)}"
+                        placeholder="${isEmpty ? '(내용 없음 - 직접 입력 가능)' : ''}"
+                    >${escapeHtml(textContent)}</textarea>
+                </div>
+            `;
+
+            // Toggle collapse
+            card.querySelector('.section-card-header').addEventListener('click', (e) => {
+                if (e.target.closest('.section-actions')) return;
+                card.classList.toggle('collapsed');
+            });
+
+            // Copy button
+            card.querySelector('.copy-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const textarea = card.querySelector('.section-textarea');
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    const btn = e.target;
+                    btn.textContent = 'OK';
+                    btn.classList.add('copy-ok');
+                    setTimeout(() => {
+                        btn.textContent = '복사';
+                        btn.classList.remove('copy-ok');
+                    }, 1500);
+                });
+            });
+
+            return card;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Back button
+        backBtn.addEventListener('click', () => {
+            phasePreview.style.display = 'none';
+            phaseUpload.style.display = 'block';
+            clearFile();
+        });
+
+        // Expand/Collapse all
+        expandAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('.section-card').forEach(c => c.classList.remove('collapsed'));
+        });
+        collapseAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('.section-card').forEach(c => c.classList.add('collapsed'));
+        });
+
+        // Download HLT
+        downloadHltBtn.addEventListener('click', async () => {
+            // Collect edited sections from textareas
+            const editedSections = {};
+            document.querySelectorAll('.section-textarea').forEach(ta => {
+                const sid = ta.dataset.section;
+                const val = ta.value.trim();
+                if (val) {
+                    editedSections[sid] = val.split('\n').filter(line => line.trim());
+                }
+            });
+
+            loadingOverlay.classList.add('active');
+
+            try {
+                const resp = await fetch('/api/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sections: editedSections,
+                        filename: currentFile ? currentFile.name : 'patent.hlt',
+                    }),
+                });
+
+                loadingOverlay.classList.remove('active');
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    showToast(err.error || 'HLT 변환에 실패했습니다.', 'error');
+                    return;
+                }
+
+                // Download file
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const baseName = currentFile ? currentFile.name.replace(/\.(docx|hwp|hwpx)$/i, '') : 'patent';
+                a.download = baseName + '.hlt';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                a.remove();
+
+                showToast('HLT 파일이 다운로드되었습니다.', 'success');
+            } catch (e) {
+                loadingOverlay.classList.remove('active');
+                showToast('다운로드 오류: ' + e.message, 'error');
+            }
+        });
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+    })();
     </script>
 </body>
 </html>
