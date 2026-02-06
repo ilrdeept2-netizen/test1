@@ -13,6 +13,7 @@ import sys
 import re
 from pathlib import Path
 from datetime import datetime
+from collections import OrderedDict
 from lxml import etree
 from typing import Dict, List, Optional
 
@@ -27,42 +28,123 @@ except ImportError as e:
     sys.exit(1)
 
 
-class PatentSection:
-    """특허 명세서 섹션 정의"""
+# =====================================================================
+# 섹션 정의 및 유틸리티 함수
+# =====================================================================
 
-    # 특허 명세서 표준 섹션 (한국 특허청 기준)
-    SECTIONS = {
-        '발명의명칭': 'invention-title',
-        '발명의 명칭': 'invention-title',
-        '발명명칭': 'invention-title',
-        '기술분야': 'technical-field',
-        '발명의배경이되는기술': 'background-art',
-        '발명의 배경이 되는 기술': 'background-art',
-        '배경기술': 'background-art',
-        '선행기술문헌': 'prior-art-documents',
-        '선행기술': 'prior-art-documents',
-        '해결하려는과제': 'disclosure',
-        '해결하려는 과제': 'disclosure',
-        '과제': 'disclosure',
-        '과제의해결수단': 'means-for-solving',
-        '과제의 해결 수단': 'means-for-solving',
-        '해결수단': 'means-for-solving',
-        '발명의효과': 'effects',
-        '발명의 효과': 'effects',
-        '효과': 'effects',
-        '도면의간단한설명': 'brief-description-of-drawings',
-        '도면의 간단한 설명': 'brief-description-of-drawings',
-        '도면의설명': 'brief-description-of-drawings',
-        '도면설명': 'brief-description-of-drawings',
-        '발명을실시하기위한구체적인내용': 'detailed-description',
-        '발명을 실시하기 위한 구체적인 내용': 'detailed-description',
-        '실시예': 'detailed-description',
-        '구체적인내용': 'detailed-description',
-        '상세한설명': 'detailed-description',
-        '청구범위': 'claims',
-        '청구항': 'claims',
-        '요약': 'abstract',
-    }
+SECTION_DEFINITIONS = OrderedDict([
+    ('invention-title', ['발명의 명칭']),
+    ('technical-field', ['기술분야']),
+    ('background-art', ['발명의 배경이 되는 기술', '배경기술']),
+    ('technical-problem', ['해결하려는 과제', '해결하고자 하는 과제']),
+    ('technical-solution', ['과제의 해결 수단']),
+    ('advantageous-effects', ['발명의 효과']),
+    ('description-of-drawings', ['도면의 간단한 설명']),
+    ('detailed-description', ['발명을 실시하기 위한 구체적인 내용', '실시예']),
+    ('reference-signs', ['부호의 설명']),
+    ('claims', ['특허청구범위', '청구범위']),
+    ('abstract', ['요약서', '요약']),
+    ('representative-drawing', ['대표도면']),
+])
+
+
+def detect_section(text):
+    """텍스트에서 섹션 헤더를 감지하여 섹션 ID를 반환"""
+    text = text.strip()
+    match = re.match(r'[【\[](.*?)[】\]]', text)
+    if not match:
+        return None
+    header = match.group(1).strip()
+
+    # 청구항 N 패턴
+    if re.match(r'청구항\s*\d+', header):
+        return 'claim-item'
+
+    # 섹션 정의에서 매칭
+    for section_id, keywords in SECTION_DEFINITIONS.items():
+        for keyword in keywords:
+            if header == keyword:
+                return section_id
+
+    return None
+
+
+def parse_claims(lines):
+    """청구항 텍스트 라인들을 파싱하여 구조화된 리스트로 반환"""
+    claims = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # "청구항 N:" 형식
+        m = re.match(r'청구항\s*(\d+)\s*[:：]\s*(.*)', line)
+        if m:
+            claims.append({'num': int(m.group(1)), 'text': m.group(2).strip()})
+            continue
+
+        # "N." 형식
+        m = re.match(r'(\d+)\.\s+(.*)', line)
+        if m:
+            claims.append({'num': int(m.group(1)), 'text': m.group(2).strip()})
+            continue
+
+        # 번호 없는 경우: 이전 청구항에 추가 또는 새 청구항 생성
+        if claims:
+            claims[-1]['text'] += ' ' + line
+        else:
+            claims.append({'num': len(claims) + 1, 'text': line})
+
+    return claims
+
+
+# =====================================================================
+# 문서 읽기 클래스
+# =====================================================================
+
+class WordReader:
+    """Word 문서 읽기 클래스"""
+
+    def __init__(self, file_path: str):
+        self.file_path = Path(file_path)
+        if not self.file_path.exists():
+            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
+
+        try:
+            self.document = Document(str(self.file_path))
+        except Exception as e:
+            raise ValueError(f"Word 문서를 열 수 없습니다: {e}")
+
+    def get_paragraphs(self):
+        """문서의 모든 비어있지 않은 단락 텍스트를 반환"""
+        return [p.text for p in self.document.paragraphs if p.text.strip()]
+
+    def extract_text_with_structure(self) -> Dict[str, List[str]]:
+        """구조를 유지하며 텍스트 추출"""
+        sections = {}
+        current_section = 'header'
+        sections[current_section] = []
+
+        for para in self.document.paragraphs:
+            text = para.text.strip()
+            if not text:
+                continue
+
+            section_key = detect_section(text)
+            if section_key and section_key != 'claim-item':
+                current_section = section_key
+                sections[current_section] = []
+            elif section_key == 'claim-item':
+                # 청구항 아이템은 claims 섹션에 포함
+                if 'claims' not in sections:
+                    sections['claims'] = []
+                current_section = 'claims'
+            else:
+                sections.setdefault(current_section, [])
+                sections[current_section].append(text)
+
+        return sections
 
 
 class PDFReader:
@@ -84,7 +166,6 @@ class PDFReader:
         current_section = 'header'
         sections[current_section] = []
 
-        # 모든 페이지에서 텍스트 추출
         full_text = ""
         for page in self.pdf.pages:
             try:
@@ -94,7 +175,6 @@ class PDFReader:
             except:
                 continue
 
-        # 줄 단위로 처리
         lines = full_text.split('\n')
 
         for line in lines:
@@ -102,86 +182,15 @@ class PDFReader:
             if not text:
                 continue
 
-            # 섹션 헤더 감지
-            section_key = self._detect_section(text)
-            if section_key:
+            section_key = detect_section(text)
+            if section_key and section_key != 'claim-item':
                 current_section = section_key
                 sections[current_section] = []
             else:
-                if current_section not in sections:
-                    sections[current_section] = []
+                sections.setdefault(current_section, [])
                 sections[current_section].append(text)
 
         return sections
-
-    def _detect_section(self, text: str) -> Optional[str]:
-        """섹션 헤더 감지"""
-        # 【 】 또는 [ ] 안의 텍스트 추출
-        matches = re.findall(r'[【\[]([^】\]]+)[】\]]', text)
-        if matches:
-            section_text = matches[0].strip()
-            section_key = section_text.replace(' ', '')
-            if section_key in PatentSection.SECTIONS:
-                return PatentSection.SECTIONS[section_key]
-
-        # 일반 헤더 형식 감지
-        for key, value in PatentSection.SECTIONS.items():
-            if text.startswith(key) or key in text:
-                return value
-
-        return None
-
-
-class WordReader:
-    """Word 문서 읽기 클래스"""
-
-    def __init__(self, file_path: str):
-        self.file_path = Path(file_path)
-        if not self.file_path.exists():
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
-
-        try:
-            self.document = Document(str(self.file_path))
-        except Exception as e:
-            raise ValueError(f"Word 문서를 열 수 없습니다: {e}")
-
-    def extract_text_with_structure(self) -> Dict[str, List[str]]:
-        """구조를 유지하며 텍스트 추출"""
-        sections = {}
-        current_section = 'header'
-        sections[current_section] = []
-
-        for para in self.document.paragraphs:
-            text = para.text.strip()
-            if not text:
-                continue
-
-            # 섹션 헤더 감지
-            section_key = self._detect_section(text)
-            if section_key:
-                current_section = section_key
-                sections[current_section] = []
-            else:
-                if current_section not in sections:
-                    sections[current_section] = []
-                sections[current_section].append(text)
-
-        return sections
-
-    def _detect_section(self, text: str) -> Optional[str]:
-        """섹션 헤더 감지"""
-        matches = re.findall(r'[【\[]([^】\]]+)[】\]]', text)
-        if matches:
-            section_text = matches[0].strip()
-            section_key = section_text.replace(' ', '')
-            if section_key in PatentSection.SECTIONS:
-                return PatentSection.SECTIONS[section_key]
-
-        for key, value in PatentSection.SECTIONS.items():
-            if text.startswith(key):
-                return value
-
-        return None
 
 
 class HWPReader:
@@ -224,13 +233,12 @@ class HWPReader:
                 if not text:
                     continue
 
-                section_key = self._detect_section(text)
-                if section_key:
+                section_key = detect_section(text)
+                if section_key and section_key != 'claim-item':
                     current_section = section_key
                     sections[current_section] = []
                 else:
-                    if current_section not in sections:
-                        sections[current_section] = []
+                    sections.setdefault(current_section, [])
                     sections[current_section].append(text)
 
         except Exception as e:
@@ -251,139 +259,55 @@ class HWPReader:
             except:
                 return ""
 
-    def _detect_section(self, text: str) -> Optional[str]:
-        """섹션 헤더 감지"""
-        matches = re.findall(r'[【\[]([^】\]]+)[】\]]', text)
-        if matches:
-            section_text = matches[0].strip()
-            section_key = section_text.replace(' ', '')
-            if section_key in PatentSection.SECTIONS:
-                return PatentSection.SECTIONS[section_key]
 
-        for key, value in PatentSection.SECTIONS.items():
-            if key in text or text.startswith(key):
-                return value
+# =====================================================================
+# HLT 생성기
+# =====================================================================
 
-        return None
+class HLTGenerator:
+    """HLT (XML) 형식 생성기"""
 
+    NSMAP = {None: 'http://www.kipo.go.kr/kipo'}
 
-class HLTConverter:
-    """HLT 형식 변환기"""
+    def generate(self, sections, output_path):
+        """섹션 딕셔너리를 기반으로 HLT XML 파일 생성"""
+        root = etree.Element('patent-document', nsmap=self.NSMAP)
 
-    def __init__(self):
-        # 한국특허청 HLT XML 네임스페이스
-        self.nsmap = {
-            None: "http://www.kipo.go.kr/kipo",
-        }
+        for section_id, content_lines in sections.items():
+            if section_id == 'invention-title':
+                elem = etree.SubElement(root, 'invention-title')
+                elem.text = '\n'.join(content_lines)
 
-    def convert_to_hlt(self, sections: Dict[str, List[str]],
-                      output_path: str,
-                      metadata: Optional[Dict] = None) -> str:
-        """섹션 데이터를 HLT XML로 변환"""
+            elif section_id == 'claims':
+                claims_elem = etree.SubElement(root, 'claims')
+                parsed = parse_claims(content_lines)
+                for claim in parsed:
+                    claim_elem = etree.SubElement(claims_elem, 'claim')
+                    claim_elem.set('num', str(claim['num']))
+                    p = etree.SubElement(claim_elem, 'p')
+                    p.text = claim['text']
 
-        # 루트 엘리먼트 생성 (한국특허청 표준 형식)
-        root = etree.Element("patent-document", nsmap=self.nsmap)
+            elif section_id == 'abstract':
+                abstract_elem = etree.SubElement(root, 'abstract')
+                for line in content_lines:
+                    p = etree.SubElement(abstract_elem, 'p')
+                    p.text = line
 
-        # 문서 정보
-        doc_info = etree.Comment(f" Generated by Patent Format Converter on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ")
-        root.insert(0, doc_info)
+            else:
+                section_elem = etree.SubElement(root, section_id)
+                for line in content_lines:
+                    p = etree.SubElement(section_elem, 'p')
+                    p.text = line
 
-        # 명세서 본문
-        description = etree.SubElement(root, "description")
-
-        # 발명의 명칭 (필수)
-        if 'invention-title' in sections and sections['invention-title']:
-            title_elem = etree.SubElement(description, "invention-title")
-            title_text = ' '.join(sections['invention-title'])
-            title_elem.text = title_text
-        else:
-            # 기본 제목
-            title_elem = etree.SubElement(description, "invention-title")
-            title_elem.text = "제목 없음"
-
-        # 명세서 섹션 순서 (한국특허청 기준)
-        section_order = [
-            ('technical-field', 'technical-field'),
-            ('background-art', 'background-art'),
-            ('prior-art-documents', 'prior-art-documents'),
-            ('disclosure', 'disclosure'),
-            ('means-for-solving', 'solution'),
-            ('effects', 'advantageous-effects'),
-            ('brief-description-of-drawings', 'description-of-drawings'),
-            ('detailed-description', 'mode-for-invention'),
-        ]
-
-        for section_key, xml_tag in section_order:
-            if section_key in sections and sections[section_key]:
-                section_elem = etree.SubElement(description, xml_tag)
-
-                # 섹션 제목
-                heading = etree.SubElement(section_elem, "heading")
-                heading.text = self._get_section_title(section_key)
-
-                # 내용
-                for para_text in sections[section_key]:
-                    if para_text.strip():
-                        para = etree.SubElement(section_elem, "p")
-                        para.text = para_text
-
-        # 청구범위
-        if 'claims' in sections and sections['claims']:
-            claims_elem = etree.SubElement(root, "claims")
-
-            claim_number = 1
-            for claim_text in sections['claims']:
-                if claim_text.strip():
-                    # 청구항 번호 추출 시도
-                    match = re.match(r'청구항\s*(\d+)', claim_text)
-                    if match:
-                        claim_number = int(match.group(1))
-                        claim_text = re.sub(r'청구항\s*\d+\s*[:：]?\s*', '', claim_text)
-
-                    claim = etree.SubElement(claims_elem, "claim")
-                    claim.set("id", f"CLM-{claim_number:05d}")
-                    claim.set("num", str(claim_number))
-
-                    claim_text_elem = etree.SubElement(claim, "claim-text")
-                    claim_text_elem.text = claim_text.strip()
-
-                    claim_number += 1
-
-        # 요약
-        if 'abstract' in sections and sections['abstract']:
-            abstract_elem = etree.SubElement(root, "abstract")
-            for para_text in sections['abstract']:
-                if para_text.strip():
-                    para = etree.SubElement(abstract_elem, "p")
-                    para.text = para_text
-
-        # XML 파일 저장
         tree = etree.ElementTree(root)
-        output_path = Path(output_path)
+        tree.write(output_path, xml_declaration=True, encoding='UTF-8',
+                   pretty_print=True)
+        return output_path
 
-        with open(output_path, 'wb') as f:
-            tree.write(f,
-                      pretty_print=True,
-                      xml_declaration=True,
-                      encoding='UTF-8',
-                      doctype='<!DOCTYPE patent-document SYSTEM "patent-document-v1-0.dtd">')
 
-        return str(output_path)
-
-    def _get_section_title(self, section_key: str) -> str:
-        """섹션 키에 해당하는 한글 제목 반환"""
-        titles = {
-            'technical-field': '기술분야',
-            'background-art': '발명의 배경이 되는 기술',
-            'prior-art-documents': '선행기술문헌',
-            'disclosure': '발명의 내용',
-            'means-for-solving': '과제의 해결 수단',
-            'effects': '발명의 효과',
-            'brief-description-of-drawings': '도면의 간단한 설명',
-            'detailed-description': '발명을 실시하기 위한 구체적인 내용',
-        }
-        return titles.get(section_key, section_key)
-
+# =====================================================================
+# 메인 변환기
+# =====================================================================
 
 class PatentFormatConverter:
     """특허 문서 형식 변환기 메인 클래스"""
@@ -394,62 +318,71 @@ class PatentFormatConverter:
         if not self.input_path.exists():
             raise FileNotFoundError(f"입력 파일을 찾을 수 없습니다: {input_path}")
 
-        # 출력 경로 설정
         if output_path:
             self.output_path = Path(output_path)
         else:
             self.output_path = self.input_path.with_suffix('.hlt')
 
-        # 파일 확장자 확인
         self.file_type = self.input_path.suffix.lower()
         if self.file_type not in ['.docx', '.doc', '.hwp', '.pdf']:
             raise ValueError(f"지원하지 않는 파일 형식: {self.file_type}\n지원 형식: .docx, .hwp, .pdf")
 
+    def extract_sections(self) -> OrderedDict:
+        """문서에서 섹션을 추출하여 OrderedDict로 반환"""
+        reader = self._create_reader()
+        paragraphs = [p.text for p in reader.document.paragraphs if p.text.strip()]
+
+        sections = OrderedDict()
+        current_section = None
+        pending_claim_num = None
+
+        for text in paragraphs:
+            section_type = detect_section(text)
+
+            if section_type == 'claim-item':
+                # 청구항 아이템은 claims 섹션에 포함
+                current_section = 'claims'
+                sections.setdefault('claims', [])
+                m = re.match(r'[【\[]청구항\s*(\d+)[】\]]', text.strip())
+                if m:
+                    pending_claim_num = m.group(1)
+                continue
+
+            elif section_type is not None:
+                current_section = section_type
+                pending_claim_num = None
+                if current_section not in sections:
+                    sections[current_section] = []
+                continue
+
+            if current_section and current_section in sections:
+                if pending_claim_num:
+                    text = f'청구항 {pending_claim_num}: {text}'
+                    pending_claim_num = None
+                sections[current_section].append(text)
+
+        return sections
+
     def convert(self) -> str:
         """파일 변환 실행"""
-        print(f"=" * 70)
-        print(f"특허 문서 변환기 - Patent Format Converter")
-        print(f"=" * 70)
-        print()
-        print(f"입력 파일: {self.input_path.name}")
-        print(f"파일 형식: {self.file_type}")
-        print(f"출력 파일: {self.output_path.name}")
-        print()
+        sections = self.extract_sections()
 
-        # 문서 읽기
-        print("📖 문서 읽는 중...")
-        sections = self._read_document()
+        generator = HLTGenerator()
+        generator.generate(sections, str(self.output_path))
 
-        # 발견된 섹션 출력
-        print(f"✓ 발견된 섹션: {len(sections)}개")
-        for section_name in sections.keys():
-            content_count = len(sections[section_name])
-            print(f"  - {section_name}: {content_count}개 항목")
-        print()
+        return str(self.output_path)
 
-        # HLT로 변환
-        print("🔄 HLT 형식으로 변환 중...")
-        converter = HLTConverter()
-        output_file = converter.convert_to_hlt(sections, str(self.output_path))
-
-        print()
-        print(f"=" * 70)
-        print(f"✓ 변환 완료!")
-        print(f"=" * 70)
-        print()
-        print(f"출력 파일: {output_file}")
-        print()
-        print("다음 단계:")
-        print("  1. 생성된 HLT 파일을 K-Editor에서 열기")
-        print("  2. 내용 확인 및 수정")
-        print("  3. XML 변환 (HLZ 파일 생성)")
-        print("  4. 특허청 전자출원")
-        print()
-
-        return output_file
+    def _create_reader(self):
+        """파일 형식에 따른 리더 생성"""
+        if self.file_type == '.docx':
+            return WordReader(str(self.input_path))
+        elif self.file_type == '.doc':
+            raise NotImplementedError("구형 .doc 형식은 먼저 .docx로 변환해주세요.")
+        else:
+            raise ValueError(f"extract_sections은 .docx 파일만 지원합니다: {self.file_type}")
 
     def _read_document(self) -> Dict[str, List[str]]:
-        """문서 형식에 따라 읽기"""
+        """문서 형식에 따라 읽기 (HWP, PDF 포함)"""
         if self.file_type == '.docx':
             reader = WordReader(str(self.input_path))
             return reader.extract_text_with_structure()
@@ -481,42 +414,21 @@ def main():
 지원 형식:
   - 입력: .docx, .hwp, .pdf
   - 출력: .hlt (한국특허청 XML 형식)
-
-문서 작성 가이드:
-  다음과 같은 섹션 헤더를 사용하세요:
-  【발명의 명칭】
-  【기술분야】
-  【발명의 배경이 되는 기술】
-  【해결하려는 과제】
-  【과제의 해결 수단】
-  【발명의 효과】
-  【도면의 간단한 설명】
-  【발명을 실시하기 위한 구체적인 내용】
-  【청구범위】
-  【요약】
         """
     )
 
-    parser.add_argument(
-        'input_file',
-        help='변환할 파일 (Word/HWP/PDF)'
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        help='출력 HLT 파일 경로 (기본값: 입력파일명.hlt)',
-        default=None
-    )
+    parser.add_argument('input_file', help='변환할 파일 (Word/HWP/PDF)')
+    parser.add_argument('-o', '--output', help='출력 HLT 파일 경로', default=None)
 
     args = parser.parse_args()
 
     try:
         converter = PatentFormatConverter(args.input_file, args.output)
-        converter.convert()
+        output = converter.convert()
+        print(f"변환 완료: {output}")
         return 0
     except Exception as e:
-        print()
-        print(f"❌ 오류 발생: {e}", file=sys.stderr)
+        print(f"오류 발생: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return 1
