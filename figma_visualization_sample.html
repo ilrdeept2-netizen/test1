@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figma + Claude 시각화 샘플 대시보드</title>
+    <style>
+        /* ===== Figma Design Tokens ===== */
+        :root {
+            --fig-primary: #7C3AED;
+            --fig-primary-light: #A78BFA;
+            --fig-primary-dark: #5B21B6;
+            --fig-accent: #F59E0B;
+            --fig-accent-light: #FCD34D;
+            --fig-success: #10B981;
+            --fig-danger: #EF4444;
+            --fig-info: #3B82F6;
+            --fig-bg: #0F172A;
+            --fig-surface: #1E293B;
+            --fig-surface-hover: #334155;
+            --fig-border: #334155;
+            --fig-text: #F1F5F9;
+            --fig-text-muted: #94A3B8;
+            --fig-radius: 16px;
+            --fig-radius-sm: 8px;
+            --fig-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --fig-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--fig-bg);
+            color: var(--fig-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, var(--fig-surface) 0%, rgba(124,58,237,0.15) 100%);
+            border-bottom: 1px solid var(--fig-border);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-figma {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #F24E1E 0%, #FF7262 25%, #A259FF 50%, #1ABCFE 75%, #0ACF83 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            color: white;
+        }
+
+        .logo-plus {
+            font-size: 20px;
+            color: var(--fig-text-muted);
+        }
+
+        .logo-claude {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #D97706, #F59E0B);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            color: white;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--fig-primary-light), var(--fig-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-badge {
+            padding: 4px 12px;
+            background: rgba(124, 58, 237, 0.2);
+            border: 1px solid var(--fig-primary);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--fig-primary-light);
+            font-weight: 600;
+        }
+
+        .header-time {
+            color: var(--fig-text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ===== Main Grid ===== */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+            padding: 24px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* ===== Card Base ===== */
+        .card {
+            background: var(--fig-surface);
+            border-radius: var(--fig-radius);
+            border: 1px solid var(--fig-border);
+            padding: 24px;
+            transition: var(--fig-transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--fig-shadow);
+            border-color: var(--fig-primary);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--fig-primary), var(--fig-accent));
+            opacity: 0;
+            transition: var(--fig-transition);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--fig-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* ===== KPI Cards ===== */
+        .kpi-card .kpi-value {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .kpi-card .kpi-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .kpi-change.positive {
+            color: var(--fig-success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .kpi-change.negative {
+            color: var(--fig-danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: absolute;
+            right: 24px;
+            top: 24px;
+        }
+
+        /* ===== Chart Area ===== */
+        .chart-area {
+            grid-column: span 2;
+            grid-row: span 1;
+            min-height: 320px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            margin-top: 12px;
+        }
+
+        /* SVG Chart */
+        .svg-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ===== Donut Chart ===== */
+        .donut-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .donut-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 12px auto 16px;
+        }
+
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .donut-center-value {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .donut-center-label {
+            font-size: 11px;
+            color: var(--fig-text-muted);
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--fig-text-muted);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* ===== Bar Chart ===== */
+        .bar-chart-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 200px;
+            padding-top: 20px;
+            margin-top: 12px;
+        }
+
+        .bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            max-width: 48px;
+            border-radius: 8px 8px 4px 4px;
+            transition: var(--fig-transition);
+            position: relative;
+            cursor: pointer;
+            min-height: 4px;
+        }
+
+        .bar:hover {
+            filter: brightness(1.2);
+            transform: scaleY(1.02);
+            transform-origin: bottom;
+        }
+
+        .bar-label {
+            font-size: 11px;
+            color: var(--fig-text-muted);
+            font-weight: 500;
+        }
+
+        .bar-value {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--fig-text);
+            opacity: 0;
+            transition: var(--fig-transition);
+        }
+
+        .bar-group:hover .bar-value {
+            opacity: 1;
+        }
+
+        /* ===== Activity List ===== */
+        .activity-list {
+            grid-column: span 2;
+        }
+
+        .activity-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: var(--fig-radius-sm);
+            border: 1px solid transparent;
+            transition: var(--fig-transition);
+            cursor: pointer;
+        }
+
+        .activity-item:hover {
+            background: var(--fig-surface-hover);
+            border-color: var(--fig-border);
+        }
+
+        .activity-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .activity-desc {
+            font-size: 12px;
+            color: var(--fig-text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--fig-text-muted);
+            flex-shrink: 0;
+        }
+
+        .activity-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ===== Heatmap ===== */
+        .heatmap-area {
+            grid-column: span 4;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            transition: var(--fig-transition);
+            cursor: pointer;
+            position: relative;
+            min-height: 18px;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.3);
+            z-index: 10;
+            box-shadow: 0 0 12px rgba(124, 58, 237, 0.5);
+        }
+
+        .heatmap-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .heatmap-label {
+            font-size: 11px;
+            color: var(--fig-text-muted);
+        }
+
+        .heatmap-day-labels {
+            display: grid;
+            grid-template-rows: repeat(7, 1fr);
+            gap: 4px;
+            margin-right: 8px;
+        }
+
+        .heatmap-wrapper {
+            display: flex;
+            align-items: start;
+        }
+
+        .heatmap-day-label {
+            font-size: 10px;
+            color: var(--fig-text-muted);
+            display: flex;
+            align-items: center;
+            min-height: 18px;
+        }
+
+        /* ===== Progress Ring ===== */
+        .progress-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-rings {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .progress-ring-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-ring-label {
+            font-size: 12px;
+            color: var(--fig-text-muted);
+            font-weight: 500;
+        }
+
+        .progress-ring-value {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* ===== Animated pulse ===== */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes drawLine {
+            from { stroke-dashoffset: 1000; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            animation: slideUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+        .card:nth-child(4) { animation-delay: 0.2s; }
+        .card:nth-child(5) { animation-delay: 0.25s; }
+        .card:nth-child(6) { animation-delay: 0.3s; }
+        .card:nth-child(7) { animation-delay: 0.35s; }
+        .card:nth-child(8) { animation-delay: 0.4s; }
+        .card:nth-child(9) { animation-delay: 0.45s; }
+
+        /* ===== Sparkline ===== */
+        .sparkline {
+            margin-top: 12px;
+        }
+
+        /* ===== Tooltip ===== */
+        .tooltip {
+            display: none;
+            position: fixed;
+            background: var(--fig-surface);
+            border: 1px solid var(--fig-primary);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--fig-text);
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 16px 20px;
+            }
+            .chart-area, .activity-list, .heatmap-area {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .chart-area, .activity-list, .heatmap-area {
+                grid-column: span 1;
+            }
+            .header {
+                padding: 16px 20px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--fig-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--fig-primary); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo-container">
+            <div class="logo-figma">F</div>
+            <span class="logo-plus">+</span>
+            <div class="logo-claude">C</div>
+        </div>
+        <div>
+            <div class="header-title">Figma + Claude Analytics</div>
+        </div>
+        <span class="header-badge">LIVE</span>
+    </div>
+    <div class="header-time" id="headerTime"></div>
+</div>
+
+<div class="dashboard">
+    <!-- KPI 1 -->
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(124,58,237,0.15);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="card-title">Active Users</div>
+        <div class="kpi-value" style="color: var(--fig-primary-light);" id="kpiUsers">12,847</div>
+        <span class="kpi-change positive">+12.5%</span>
+        <div class="sparkline" id="sparkline1"></div>
+    </div>
+
+    <!-- KPI 2 -->
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(245,158,11,0.15);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FCD34D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="card-title">Design Sessions</div>
+        <div class="kpi-value" style="color: var(--fig-accent-light);" id="kpiSessions">3,291</div>
+        <span class="kpi-change positive">+8.3%</span>
+        <div class="sparkline" id="sparkline2"></div>
+    </div>
+
+    <!-- KPI 3 -->
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(16,185,129,0.15);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="card-title">AI Generations</div>
+        <div class="kpi-value" style="color: var(--fig-success);" id="kpiGenerated">48,592</div>
+        <span class="kpi-change positive">+24.1%</span>
+        <div class="sparkline" id="sparkline3"></div>
+    </div>
+
+    <!-- KPI 4 -->
+    <div class="card kpi-card">
+        <div class="kpi-icon" style="background: rgba(59,130,246,0.15);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="card-title">Avg Response Time</div>
+        <div class="kpi-value" style="color: var(--fig-info);">1.2<span style="font-size:20px;">s</span></div>
+        <span class="kpi-change negative">-0.3s</span>
+        <div class="sparkline" id="sparkline4"></div>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="card chart-area">
+        <div class="card-title">Weekly Trend - Design Requests vs AI Completions</div>
+        <div class="chart-container">
+            <svg class="svg-chart" id="lineChart" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="card donut-area">
+        <div class="card-title">Component Distribution</div>
+        <div class="donut-container">
+            <svg viewBox="0 0 180 180" id="donutChart"></svg>
+            <div class="donut-center">
+                <div class="donut-center-value" id="donutTotal">2,847</div>
+                <div class="donut-center-label">Total</div>
+            </div>
+        </div>
+        <div class="donut-legend" id="donutLegend"></div>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="card">
+        <div class="card-title">Daily Output by Category</div>
+        <div class="bar-chart-container" id="barChart"></div>
+    </div>
+
+    <!-- Activity -->
+    <div class="card activity-list">
+        <div class="card-title">Recent AI Design Activity</div>
+        <div class="activity-items" id="activityList"></div>
+    </div>
+
+    <!-- Progress Rings -->
+    <div class="card progress-area">
+        <div class="card-title">Sprint Goals</div>
+        <div class="progress-rings" id="progressRings"></div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="card heatmap-area">
+        <div class="card-title">Design Activity Heatmap (Last 24 Weeks)</div>
+        <div class="heatmap-wrapper">
+            <div class="heatmap-day-labels" id="heatmapDayLabels"></div>
+            <div style="flex:1;">
+                <div class="heatmap-grid" id="heatmapGrid"></div>
+                <div class="heatmap-labels">
+                    <span class="heatmap-label">24 weeks ago</span>
+                    <span class="heatmap-label">12 weeks ago</span>
+                    <span class="heatmap-label">Now</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ===== Utility =====
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ===== Header Time =====
+function updateTime() {
+    const now = new Date();
+    document.getElementById('headerTime').textContent =
+        now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) + ' ' +
+        now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+// ===== Sparklines =====
+function createSparkline(containerId, data, color) {
+    const container = document.getElementById(containerId);
+    const width = 160, height = 32;
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    const range = max - min || 1;
+
+    const points = data.map((v, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - ((v - min) / range) * (height - 4) - 2;
+        return `${x},${y}`;
+    });
+
+    const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        <defs>
+            <linearGradient id="grad-${containerId}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <polygon points="0,${height} ${points.join(' ')} ${width},${height}"
+            fill="url(#grad-${containerId})" />
+        <polyline points="${points.join(' ')}"
+            fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    container.innerHTML = svg;
+}
+
+createSparkline('sparkline1', [65,72,68,80,75,90,85,92,88,95,100,97], '#A78BFA');
+createSparkline('sparkline2', [30,35,28,40,38,42,50,48,52,55,51,58], '#FCD34D');
+createSparkline('sparkline3', [100,120,110,150,140,180,200,190,210,230,220,250], '#10B981');
+createSparkline('sparkline4', [2.5,2.3,2.1,1.9,2.0,1.8,1.6,1.5,1.4,1.3,1.2,1.2], '#3B82F6');
+
+// ===== Line Chart =====
+(function drawLineChart() {
+    const svg = document.getElementById('lineChart');
+    const W = 600, H = 220, padL = 40, padR = 20, padT = 20, padB = 30;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const data1 = [120, 180, 150, 220, 280, 240, 310];
+    const data2 = [90, 150, 130, 200, 250, 220, 290];
+    const maxVal = Math.max(...data1, ...data2);
+
+    let html = '';
+
+    // Grid lines
+    for (let i = 0; i <= 4; i++) {
+        const y = padT + (i / 4) * chartH;
+        const val = Math.round(maxVal * (1 - i / 4));
+        html += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>`;
+        html += `<text x="${padL - 8}" y="${y + 4}" fill="#94A3B8" font-size="10" text-anchor="end">${val}</text>`;
+    }
+
+    // X labels
+    labels.forEach((l, i) => {
+        const x = padL + (i / (labels.length - 1)) * chartW;
+        html += `<text x="${x}" y="${H - 5}" fill="#94A3B8" font-size="11" text-anchor="middle">${l}</text>`;
+    });
+
+    // Helper to make path
+    function makePath(data, color) {
+        const points = data.map((v, i) => {
+            const x = padL + (i / (data.length - 1)) * chartW;
+            const y = padT + chartH - (v / maxVal) * chartH;
+            return { x, y };
+        });
+
+        let path = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            const cp1x = lerp(points[i - 1].x, points[i].x, 0.5);
+            path += ` C ${cp1x} ${points[i - 1].y}, ${cp1x} ${points[i].y}, ${points[i].x} ${points[i].y}`;
+        }
+
+        // Area
+        const areaPath = path + ` L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`;
+        html += `<defs><linearGradient id="agrad-${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient></defs>`;
+        html += `<path d="${areaPath}" fill="url(#agrad-${color.replace('#','')})" />`;
+        html += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            style="stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 2s ease forwards;"/>`;
+
+        // Dots
+        points.forEach((p, i) => {
+            html += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${color}" stroke="#1E293B" stroke-width="2"
+                style="opacity:0; animation: fadeIn 0.3s ease forwards ${0.3 + i * 0.1}s"/>`;
+        });
+    }
+
+    makePath(data1, '#A78BFA');
+    makePath(data2, '#FCD34D');
+
+    // Legend
+    html += `<circle cx="${W - 180}" cy="10" r="5" fill="#A78BFA"/>
+        <text x="${W - 170}" y="14" fill="#94A3B8" font-size="11">Requests</text>
+        <circle cx="${W - 100}" cy="10" r="5" fill="#FCD34D"/>
+        <text x="${W - 90}" y="14" fill="#94A3B8" font-size="11">Completions</text>`;
+
+    svg.innerHTML = html;
+})();
+
+// ===== Donut Chart =====
+(function drawDonut() {
+    const svg = document.getElementById('donutChart');
+    const legend = document.getElementById('donutLegend');
+    const cx = 90, cy = 90, r = 70, strokeW = 20;
+    const data = [
+        { label: 'UI Components', value: 892, color: '#A78BFA' },
+        { label: 'Icons', value: 634, color: '#FCD34D' },
+        { label: 'Illustrations', value: 521, color: '#10B981' },
+        { label: 'Layouts', value: 445, color: '#3B82F6' },
+        { label: 'Prototypes', value: 355, color: '#EF4444' },
+    ];
+
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    let html = '';
+
+    data.forEach((d, i) => {
+        const pct = d.value / total;
+        const dashLen = pct * circumference;
+        const gap = circumference - dashLen;
+        const rotation = (offset / total) * 360 - 90;
+
+        html += `<circle cx="${cx}" cy="${cy}" r="${r}"
+            fill="none" stroke="${d.color}" stroke-width="${strokeW}"
+            stroke-dasharray="${dashLen} ${gap}"
+            transform="rotate(${rotation} ${cx} ${cy})"
+            style="opacity:0; animation: fadeIn 0.4s ease forwards ${0.2 + i * 0.15}s; cursor:pointer;"
+            onmouseenter="showTooltip(event, '${d.label}: ${d.value} (${(pct*100).toFixed(1)}%)')"
+            onmouseleave="hideTooltip()"/>`;
+        offset += d.value;
+    });
+
+    svg.innerHTML = html;
+
+    legend.innerHTML = data.map(d =>
+        `<div class="legend-item"><div class="legend-dot" style="background:${d.color}"></div>${d.label}</div>`
+    ).join('');
+})();
+
+// ===== Bar Chart =====
+(function drawBarChart() {
+    const container = document.getElementById('barChart');
+    const data = [
+        { label: 'Buttons', value: 85, color: '#A78BFA' },
+        { label: 'Cards', value: 65, color: '#FCD34D' },
+        { label: 'Forms', value: 92, color: '#10B981' },
+        { label: 'Nav', value: 45, color: '#3B82F6' },
+        { label: 'Modals', value: 72, color: '#EF4444' },
+        { label: 'Tables', value: 58, color: '#F97316' },
+    ];
+    const maxVal = Math.max(...data.map(d => d.value));
+
+    container.innerHTML = data.map(d => {
+        const height = (d.value / maxVal) * 160;
+        return `<div class="bar-group">
+            <div class="bar-value">${d.value}</div>
+            <div class="bar" style="height:${height}px; background: linear-gradient(180deg, ${d.color}, ${d.color}88);"
+                onmouseenter="showTooltip(event, '${d.label}: ${d.value}')"
+                onmouseleave="hideTooltip()"></div>
+            <div class="bar-label">${d.label}</div>
+        </div>`;
+    }).join('');
+})();
+
+// ===== Activity List =====
+(function drawActivity() {
+    const list = document.getElementById('activityList');
+    const activities = [
+        { name: 'Design System v3.2', desc: 'Claude generated 24 new button variants', avatar: 'DS', color: '#A78BFA', time: '2min ago', status: '#10B981' },
+        { name: 'Mobile App Redesign', desc: 'Auto-layout applied to 18 frames', avatar: 'MA', color: '#3B82F6', time: '5min ago', status: '#10B981' },
+        { name: 'Landing Page', desc: 'AI suggested hero section with 3 alternatives', avatar: 'LP', color: '#F59E0B', time: '12min ago', status: '#FCD34D' },
+        { name: 'Icon Library', desc: 'Batch exported 156 icons to SVG', avatar: 'IL', color: '#10B981', time: '18min ago', status: '#10B981' },
+        { name: 'Dashboard UI', desc: 'Claude optimized chart components for dark mode', avatar: 'DU', color: '#EF4444', time: '25min ago', status: '#94A3B8' },
+        { name: 'E-commerce Flow', desc: 'Prototyped checkout with smart transitions', avatar: 'EC', color: '#F97316', time: '32min ago', status: '#10B981' },
+    ];
+
+    list.innerHTML = activities.map(a =>
+        `<div class="activity-item">
+            <div class="activity-avatar" style="background:${a.color}22; color:${a.color};">${a.avatar}</div>
+            <div class="activity-content">
+                <div class="activity-name">${a.name}</div>
+                <div class="activity-desc">${a.desc}</div>
+            </div>
+            <div class="activity-time">${a.time}</div>
+            <div class="activity-status" style="background:${a.status};"></div>
+        </div>`
+    ).join('');
+})();
+
+// ===== Progress Rings =====
+(function drawProgressRings() {
+    const container = document.getElementById('progressRings');
+    const goals = [
+        { label: 'Components', value: 78, color: '#A78BFA' },
+        { label: 'Pages', value: 92, color: '#10B981' },
+        { label: 'Assets', value: 65, color: '#FCD34D' },
+        { label: 'Tests', value: 41, color: '#3B82F6' },
+    ];
+
+    const r = 32, strokeW = 6;
+    const circumference = 2 * Math.PI * r;
+
+    container.innerHTML = goals.map((g, i) => {
+        const dashLen = (g.value / 100) * circumference;
+        return `<div class="progress-ring-item">
+            <svg width="76" height="76" viewBox="0 0 76 76">
+                <circle cx="38" cy="38" r="${r}" fill="none" stroke="#334155" stroke-width="${strokeW}"/>
+                <circle cx="38" cy="38" r="${r}" fill="none" stroke="${g.color}" stroke-width="${strokeW}"
+                    stroke-dasharray="${dashLen} ${circumference - dashLen}"
+                    stroke-linecap="round" transform="rotate(-90 38 38)"
+                    style="stroke-dasharray: 0 ${circumference}; animation: none;"
+                    id="ring-${i}"/>
+                <text x="38" y="42" fill="${g.color}" font-size="14" font-weight="800" text-anchor="middle">${g.value}%</text>
+            </svg>
+            <div class="progress-ring-label">${g.label}</div>
+        </div>`;
+    }).join('');
+
+    // Animate rings
+    setTimeout(() => {
+        goals.forEach((g, i) => {
+            const el = document.getElementById(`ring-${i}`);
+            const dashLen = (g.value / 100) * circumference;
+            el.style.transition = 'stroke-dasharray 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.strokeDasharray = `${dashLen} ${circumference - dashLen}`;
+        });
+    }, 500);
+})();
+
+// ===== Heatmap =====
+(function drawHeatmap() {
+    const grid = document.getElementById('heatmapGrid');
+    const dayLabels = document.getElementById('heatmapDayLabels');
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const colors = ['#1a1a2e', '#312e81', '#4c1d95', '#6d28d9', '#7c3aed', '#8b5cf6', '#a78bfa'];
+
+    dayLabels.innerHTML = days.map(d => `<div class="heatmap-day-label">${d}</div>`).join('');
+
+    let html = '';
+    for (let week = 0; week < 24; week++) {
+        for (let day = 0; day < 7; day++) {
+            // More activity towards recent weeks with some randomness
+            const baseIntensity = (week / 23) * 0.7 + 0.1;
+            const noise = (Math.random() - 0.3) * 0.4;
+            const weekendReduction = (day >= 5) ? 0.3 : 0;
+            const intensity = Math.max(0, Math.min(1, baseIntensity + noise - weekendReduction));
+            const colorIdx = Math.min(colors.length - 1, Math.floor(intensity * colors.length));
+            const count = Math.floor(intensity * 50);
+
+            html += `<div class="heatmap-cell" style="background:${colors[colorIdx]};"
+                onmouseenter="showTooltip(event, 'Week ${week + 1}, ${days[day]}: ${count} activities')"
+                onmouseleave="hideTooltip()"></div>`;
+        }
+    }
+    grid.innerHTML = html;
+})();
+
+// ===== Tooltip =====
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, text) {
+    tooltip.textContent = text;
+    tooltip.style.display = 'block';
+    tooltip.style.left = e.clientX + 12 + 'px';
+    tooltip.style.top = e.clientY - 30 + 'px';
+}
+function hideTooltip() {
+    tooltip.style.display = 'none';
+}
+
+// ===== Animate KPI numbers =====
+function animateValue(id, start, end, duration) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const startTime = performance.now();
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(lerp(start, end, eased));
+        el.textContent = current.toLocaleString();
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+
+setTimeout(() => {
+    animateValue('kpiUsers', 0, 12847, 2000);
+    animateValue('kpiSessions', 0, 3291, 2000);
+    animateValue('kpiGenerated', 0, 48592, 2000);
+}, 300);
+</script>
+
+</body>
+</html>
