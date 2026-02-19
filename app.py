@@ -89,12 +89,11 @@ def convert():
         return jsonify({'error': error_msg}), 500
 
     finally:
-        # 임시 파일 정리 (선택사항)
+        # 임시 파일 정리
         try:
-            if input_path.exists():
-                # input_path.unlink()  # 디버깅 시에는 주석 처리
-                pass
-        except:
+            if 'input_path' in dir() and input_path.exists():
+                input_path.unlink()
+        except Exception:
             pass
 
 
@@ -126,4 +125,4 @@ if __name__ == '__main__':
     print("서버를 중지하려면 Ctrl+C를 누르세요")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
