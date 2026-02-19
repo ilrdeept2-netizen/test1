@@ -701,5 +701,22 @@ if (-not $DiagOnly) {
 }
 
 Write-Host "  문제 지속 시: https://github.com/anthropics/claude-code/issues" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  ────────────────────────────────────────────" -ForegroundColor Cyan
+Write-Host "  [근본적 해결] Guardian 시스템 설치 권장" -ForegroundColor Yellow
+Write-Host "  ────────────────────────────────────────────" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  이 스크립트는 일회성 수정입니다." -ForegroundColor Gray
+Write-Host "  앱 업데이트 후 설정이 리셋되면 문제가 재발합니다." -ForegroundColor Gray
+Write-Host ""
+Write-Host "  영구적 해결을 위해 Guardian 시스템을 설치하세요:" -ForegroundColor White
+Write-Host "    .\claude_desktop_guardian.ps1 -Install" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Guardian이 제공하는 기능:" -ForegroundColor White
+Write-Host "    - 로그인 시 자동 안정성 설정 적용" -ForegroundColor Gray
+Write-Host "    - 크래시 감지 시 자동 안전 모드 재시작" -ForegroundColor Gray
+Write-Host "    - 업데이트 후 설정 리셋 자동 복구" -ForegroundColor Gray
+Write-Host "    - 적응형 크래시 복구 (GPU→캐시→전체초기화)" -ForegroundColor Gray
+Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
