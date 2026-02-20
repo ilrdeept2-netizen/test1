@@ -83,6 +83,18 @@ $GPU_STABLE_FLAGS = @(
     "--in-process-gpu"
 )
 
+# -- UTF-8 without BOM writer (PowerShell 5.1 Set-Content adds BOM which breaks JSON parsers) --
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
+function Write-Utf8NoBom {
+    param([string]$Path, [string]$Content)
+    $parentDir = Split-Path $Path -Parent
+    if ($parentDir -and -not (Test-Path $parentDir)) {
+        New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+    }
+    [System.IO.File]::WriteAllText($Path, $Content, $Utf8NoBom)
+}
+
 # -- Utility Functions --
 function Write-Log {
     param([string]$Message, [string]$Level = "INFO")
@@ -143,7 +155,7 @@ function Save-GuardianConfig {
     if (-not (Test-Path $CLAUDE_CONFIG_DIR)) {
         New-Item -ItemType Directory -Path $CLAUDE_CONFIG_DIR -Force | Out-Null
     }
-    $Config | ConvertTo-Json -Depth 10 | Set-Content -Path $GUARDIAN_CONFIG -Encoding UTF8
+    Write-Utf8NoBom -Path $GUARDIAN_CONFIG -Content ($Config | ConvertTo-Json -Depth 10)
 }
 
 function Get-CrashHistory {
@@ -159,7 +171,7 @@ function Get-CrashHistory {
 
 function Save-CrashHistory {
     param($History)
-    $History | ConvertTo-Json -Depth 10 | Set-Content -Path $CRASH_HISTORY_FILE -Encoding UTF8
+    Write-Utf8NoBom -Path $CRASH_HISTORY_FILE -Content ($History | ConvertTo-Json -Depth 10)
 }
 
 # ==============================================================
@@ -200,7 +212,7 @@ function Protect-StabilitySettings {
         $expectedFlags = $GPU_STABLE_FLAGS -join "`n"
 
         if ($currentFlags.Trim() -ne $expectedFlags.Trim()) {
-            Set-Content -Path $ELECTRON_FLAGS_FILE -Value $expectedFlags -Encoding UTF8
+            Write-Utf8NoBom -Path $ELECTRON_FLAGS_FILE -Content $expectedFlags
             Write-Log "Restored GPU stability flags (may have been reset by update)" "FIX"
             $fixCount++
         } else {
@@ -217,7 +229,7 @@ function Protect-StabilitySettings {
             $backupName = "${CLAUDE_DESKTOP_CONFIG}.bak.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
             Copy-Item -Path $CLAUDE_DESKTOP_CONFIG -Destination $backupName -ErrorAction SilentlyContinue
             $newConfig = [PSCustomObject]@{ allowAutoUpdate = $true }
-            $newConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $CLAUDE_DESKTOP_CONFIG -Encoding UTF8
+            Write-Utf8NoBom -Path $CLAUDE_DESKTOP_CONFIG -Content ($newConfig | ConvertTo-Json -Depth 10)
             Write-Log "Corrupted config backed up and recreated: $backupName" "FIX"
             $fixCount++
         }
