@@ -1,49 +1,41 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Claude Desktop Guardian - 영구적 크래시 방지 및 자동 복구 시스템
+    Claude Desktop Guardian - Persistent crash prevention and auto-recovery system
 
 .DESCRIPTION
-    Claude Desktop 앱이 반복적으로 크래시되는 문제를 근본적으로 해결합니다.
-    일회성 수정이 아닌, 시스템 시작 시 자동으로 안정성을 보장하고
-    크래시 발생 시 자동 복구하는 상시 감시 시스템입니다.
+    Permanently fixes Claude Desktop app crashes by providing always-on monitoring
+    and automatic recovery. Not a one-time fix - this system persists across updates.
 
-    주요 기능:
-      1) 시스템 시작 시 자동으로 안정성 설정 적용 (업데이트 후에도 유지)
-      2) Claude Desktop 프로세스 감시 및 크래시 시 자동 재시작
-      3) 업데이트로 인한 설정 리셋 자동 감지/복구
-      4) GPU 가속 설정의 영구적 관리
-      5) 캐시 손상 자동 감지/정리
-      6) 크래시 패턴 학습 및 적응형 안정화
-      7) Windows 스케줄 작업으로 영구 등록
+    Features:
+      1) Auto-apply stability settings at system startup (survives updates)
+      2) Monitor Claude Desktop process and auto-restart on crash
+      3) Detect and recover settings reset by app updates
+      4) Permanent GPU acceleration management
+      5) Auto-detect and clean corrupted cache
+      6) Adaptive crash recovery based on crash history
+      7) Register as Windows Scheduled Task for persistence
 
-    실행 방법:
-      # 최초 설치 (관리자 권한 권장)
-      .\claude_desktop_guardian.ps1 -Install
-
-      # 수동 감시 시작
-      .\claude_desktop_guardian.ps1 -Watch
-
-      # 설정 보호만 적용
-      .\claude_desktop_guardian.ps1 -Protect
-
-      # 제거
-      .\claude_desktop_guardian.ps1 -Uninstall
+    Usage:
+      .\claude_desktop_guardian.ps1 -Install     # Install Guardian (recommended)
+      .\claude_desktop_guardian.ps1 -Watch        # Start manual monitoring
+      .\claude_desktop_guardian.ps1 -Protect      # Apply stability settings once
+      .\claude_desktop_guardian.ps1 -Uninstall    # Remove Guardian
 
 .PARAMETER Install
-    Guardian을 Windows 스케줄 작업으로 등록하여 로그인 시 자동 실행합니다.
+    Register Guardian as Windows Scheduled Task for auto-run at login.
 
 .PARAMETER Watch
-    Claude Desktop 프로세스를 감시하고 크래시 시 자동 복구합니다.
+    Monitor Claude Desktop process and auto-recover on crash.
 
 .PARAMETER Protect
-    안정성 설정을 확인하고 필요 시 복구합니다 (감시 없이 1회 실행).
+    Check and restore stability settings (one-time, no monitoring).
 
 .PARAMETER Uninstall
-    Guardian 스케줄 작업 및 관련 설정을 제거합니다.
+    Remove Guardian scheduled tasks and related settings.
 
 .PARAMETER Silent
-    출력 없이 백그라운드에서 실행합니다 (스케줄 작업용).
+    Run silently in background (for scheduled task use).
 #>
 
 param(
@@ -56,7 +48,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ── 상수 ──
+# -- Constants --
 $GUARDIAN_VERSION = "2.0.0"
 $GUARDIAN_NAME = "ClaudeDesktopGuardian"
 $GUARDIAN_LOG_DIR = "$env:APPDATA\Claude\guardian_logs"
@@ -91,7 +83,7 @@ $GPU_STABLE_FLAGS = @(
     "--in-process-gpu"
 )
 
-# ── 유틸리티 함수 ──
+# -- Utility Functions --
 function Write-Log {
     param([string]$Message, [string]$Level = "INFO")
 
@@ -123,7 +115,7 @@ function Write-Banner {
     Write-Host ""
     Write-Host "  ========================================================" -ForegroundColor Cyan
     Write-Host "   Claude Desktop Guardian v$GUARDIAN_VERSION" -ForegroundColor White
-    Write-Host "   영구적 크래시 방지 및 자동 복구 시스템" -ForegroundColor Gray
+    Write-Host "   Persistent Crash Prevention & Auto-Recovery System" -ForegroundColor Gray
     Write-Host "  ========================================================" -ForegroundColor Cyan
     Write-Host ""
 }
@@ -170,21 +162,21 @@ function Save-CrashHistory {
     $History | ConvertTo-Json -Depth 10 | Set-Content -Path $CRASH_HISTORY_FILE -Encoding UTF8
 }
 
-# ══════════════════════════════════════════════════════════════
-# 핵심 기능 1: 안정성 설정 보호 (업데이트 후에도 유지)
-# ══════════════════════════════════════════════════════════════
+# ==============================================================
+# Core Feature 1: Stability Settings Protection (survives updates)
+# ==============================================================
 function Protect-StabilitySettings {
-    Write-Log "안정성 설정 보호 점검 시작" "INFO"
+    Write-Log "Checking stability settings..." "INFO"
 
     $fixCount = 0
 
-    # 1. 설정 디렉토리 확인
+    # 1. Ensure config directory exists
     if (-not (Test-Path $CLAUDE_CONFIG_DIR)) {
         New-Item -ItemType Directory -Path $CLAUDE_CONFIG_DIR -Force | Out-Null
-        Write-Log "Claude 설정 디렉토리 생성" "FIX"
+        Write-Log "Created Claude config directory" "FIX"
     }
 
-    # 2. Electron GPU 플래그 확인/복구
+    # 2. Check/restore Electron GPU flags
     $needGpuFlags = $false
     $config = Get-GuardianConfig
 
@@ -192,11 +184,11 @@ function Protect-StabilitySettings {
         $needGpuFlags = $true
     }
 
-    # 크래시 히스토리 기반 자동 판단
+    # Auto-decide based on crash history
     $history = Get-CrashHistory
     if ($history.totalCrashes -ge 2) {
         $needGpuFlags = $true
-        Write-Log "크래시 이력 $($history.totalCrashes)회 - GPU 비활성화 강제 적용" "WARN"
+        Write-Log "Crash history: $($history.totalCrashes) crashes - forcing GPU disable" "WARN"
     }
 
     if ($needGpuFlags) {
@@ -209,54 +201,53 @@ function Protect-StabilitySettings {
 
         if ($currentFlags.Trim() -ne $expectedFlags.Trim()) {
             Set-Content -Path $ELECTRON_FLAGS_FILE -Value $expectedFlags -Encoding UTF8
-            Write-Log "GPU 안정화 플래그 복구 (업데이트로 리셋되었을 수 있음)" "FIX"
+            Write-Log "Restored GPU stability flags (may have been reset by update)" "FIX"
             $fixCount++
         } else {
-            Write-Log "GPU 안정화 플래그 정상" "OK"
+            Write-Log "GPU stability flags OK" "OK"
         }
     }
 
-    # 3. 설정 파일(JSON) 무결성 확인
+    # 3. Check config file (JSON) integrity
     if (Test-Path $CLAUDE_DESKTOP_CONFIG) {
         try {
             $desktopConfig = Get-Content -Path $CLAUDE_DESKTOP_CONFIG -Raw | ConvertFrom-Json
-            Write-Log "설정 파일 정상 (파싱 가능)" "OK"
+            Write-Log "Config file OK (parseable)" "OK"
         } catch {
             $backupName = "${CLAUDE_DESKTOP_CONFIG}.bak.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
             Copy-Item -Path $CLAUDE_DESKTOP_CONFIG -Destination $backupName -ErrorAction SilentlyContinue
-            # 손상된 설정 파일 재생성
             $newConfig = [PSCustomObject]@{ allowAutoUpdate = $true }
             $newConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $CLAUDE_DESKTOP_CONFIG -Encoding UTF8
-            Write-Log "손상된 설정 파일 백업 후 재생성: $backupName" "FIX"
+            Write-Log "Corrupted config backed up and recreated: $backupName" "FIX"
             $fixCount++
         }
     }
 
-    # 4. Session Storage 손상 감지
+    # 4. Detect corrupted Session Storage
     $sessionDir = "$CLAUDE_CONFIG_DIR\Session Storage"
     if (Test-Path $sessionDir) {
         $corruptFiles = Get-ChildItem -Path $sessionDir -File -ErrorAction SilentlyContinue |
                         Where-Object { $_.Length -eq 0 }
         if ($corruptFiles.Count -gt 0) {
             Remove-Item -Path $sessionDir -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Log "손상된 Session Storage 삭제 ($($corruptFiles.Count)개 빈 파일)" "FIX"
+            Write-Log "Deleted corrupted Session Storage ($($corruptFiles.Count) empty files)" "FIX"
             $fixCount++
         }
     }
 
-    # 5. Local Storage 손상 감지
+    # 5. Detect corrupted Local Storage
     $localDir = "$CLAUDE_CONFIG_DIR\Local Storage"
     if (Test-Path $localDir) {
         $corruptLdb = Get-ChildItem -Path $localDir -Filter "*.ldb" -Recurse -ErrorAction SilentlyContinue |
                       Where-Object { $_.Length -eq 0 }
         if ($corruptLdb.Count -gt 0) {
             Remove-Item -Path $localDir -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Log "손상된 Local Storage 삭제 ($($corruptLdb.Count)개 빈 파일)" "FIX"
+            Write-Log "Deleted corrupted Local Storage ($($corruptLdb.Count) empty files)" "FIX"
             $fixCount++
         }
     }
 
-    # 6. GPUCache 크기 이상 감지 (비정상적으로 큰 경우)
+    # 6. Detect abnormally large GPUCache
     $gpuCache = "$CLAUDE_CONFIG_DIR\GPUCache"
     if (Test-Path $gpuCache) {
         $gpuCacheSize = (Get-ChildItem -Path $gpuCache -Recurse -Force -ErrorAction SilentlyContinue |
@@ -264,12 +255,12 @@ function Protect-StabilitySettings {
         if ($gpuCacheSize -gt 500MB) {
             Remove-Item -Path $gpuCache -Recurse -Force -ErrorAction SilentlyContinue
             $sizeMB = [math]::Round($gpuCacheSize / 1MB)
-            Write-Log "비정상적으로 큰 GPUCache 삭제 (${sizeMB}MB)" "FIX"
+            Write-Log "Deleted abnormally large GPUCache (${sizeMB}MB)" "FIX"
             $fixCount++
         }
     }
 
-    # 7. 이전 버전 잔존 파일 정리
+    # 7. Clean old app version remnants
     $appVersionDirs = Get-ChildItem -Path "$env:LOCALAPPDATA\Claude" -Directory -Filter "app-*" -ErrorAction SilentlyContinue
     if ($appVersionDirs.Count -gt 1) {
         $latest = $appVersionDirs | Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -277,15 +268,15 @@ function Protect-StabilitySettings {
         foreach ($old in $oldDirs) {
             try {
                 Remove-Item -Path $old.FullName -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Log "이전 버전 정리: $($old.Name)" "FIX"
+                Write-Log "Cleaned old version: $($old.Name)" "FIX"
                 $fixCount++
             } catch {
-                Write-Log "이전 버전 삭제 실패 (사용 중): $($old.Name)" "WARN"
+                Write-Log "Failed to remove old version (in use): $($old.Name)" "WARN"
             }
         }
     }
 
-    # 8. 바로가기 보호 (GPU 플래그 유지)
+    # 8. Protect shortcuts (maintain GPU flags)
     if ($needGpuFlags) {
         $shortcuts = @(
             "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Claude.lnk",
@@ -302,11 +293,11 @@ function Protect-StabilitySettings {
                         if ($shortcut.Arguments -notmatch "disable-gpu") {
                             $shortcut.Arguments = "$($shortcut.Arguments) --disable-gpu --disable-gpu-compositing".Trim()
                             $shortcut.Save()
-                            Write-Log "바로가기 GPU 플래그 복구: $(Split-Path $shortcutPath -Leaf)" "FIX"
+                            Write-Log "Restored GPU flags on shortcut: $(Split-Path $shortcutPath -Leaf)" "FIX"
                             $fixCount++
                         }
                     } catch {
-                        # 무시
+                        # ignore
                     }
                 }
             }
@@ -314,23 +305,23 @@ function Protect-StabilitySettings {
     }
 
     if ($fixCount -gt 0) {
-        Write-Log "총 ${fixCount}건 설정 복구 완료" "OK"
+        Write-Log "Total $fixCount setting(s) restored" "OK"
     } else {
-        Write-Log "모든 안정성 설정 정상" "OK"
+        Write-Log "All stability settings OK" "OK"
     }
 
     return $fixCount
 }
 
-# ══════════════════════════════════════════════════════════════
-# 핵심 기능 2: 프로세스 감시 및 자동 복구
-# ══════════════════════════════════════════════════════════════
+# ==============================================================
+# Core Feature 2: Process Monitoring & Auto-Recovery
+# ==============================================================
 function Watch-ClaudeProcess {
-    Write-Log "Claude Desktop 프로세스 감시 시작" "INFO"
+    Write-Log "Starting Claude Desktop process monitor..." "INFO"
 
     $claudeExe = Find-ClaudeExe
     if (-not $claudeExe) {
-        Write-Log "Claude Desktop 실행 파일을 찾을 수 없습니다" "ERROR"
+        Write-Log "Claude Desktop executable not found" "ERROR"
         return
     }
 
@@ -339,7 +330,6 @@ function Watch-ClaudeProcess {
     $maxCrashesBeforeCacheClean = 3
     $maxCrashesBeforeFullReset = 5
     $watchIntervalSec = 10
-    $crashWindowMinutes = 30  # 이 시간 내 크래시 횟수를 카운트
     $consecutiveCrashes = 0
     $lastSeenPid = 0
     $wasRunning = $false
@@ -349,31 +339,31 @@ function Watch-ClaudeProcess {
                        Where-Object { $_.Path -eq $claudeExe }
 
         if ($claudeProcs) {
-            # Claude가 실행 중
+            # Claude is running
             $mainProc = $claudeProcs | Sort-Object StartTime | Select-Object -First 1
 
             if (-not $wasRunning) {
-                Write-Log "Claude Desktop 실행 감지 (PID: $($mainProc.Id))" "OK"
+                Write-Log "Claude Desktop detected (PID: $($mainProc.Id))" "OK"
                 $consecutiveCrashes = 0
             }
 
             $wasRunning = $true
             $lastSeenPid = $mainProc.Id
 
-            # 메모리 사용량 모니터링 (비정상 감지)
+            # Monitor memory usage
             $memMB = [math]::Round($mainProc.WorkingSet64 / 1MB)
             if ($memMB -gt 2000) {
-                Write-Log "Claude Desktop 메모리 사용량 과다: ${memMB}MB" "WARN"
+                Write-Log "Claude Desktop high memory usage: ${memMB}MB" "WARN"
             }
 
         } else {
-            # Claude가 실행되지 않음
+            # Claude is not running
             if ($wasRunning) {
-                # 이전에 실행 중이었으나 사라짐 = 크래시 감지
+                # Was running but disappeared = crash detected
                 $consecutiveCrashes++
-                Write-Log "Claude Desktop 크래시 감지! (연속 ${consecutiveCrashes}회, 이전 PID: $lastSeenPid)" "ERROR"
+                Write-Log "CRASH DETECTED! (consecutive: $consecutiveCrashes, prev PID: $lastSeenPid)" "ERROR"
 
-                # 크래시 기록
+                # Record crash
                 $history = Get-CrashHistory
                 $crashEntry = @{
                     timestamp = (Get-Date).ToString("o")
@@ -388,7 +378,7 @@ function Watch-ClaudeProcess {
                 }
                 $crashList.Add($crashEntry) | Out-Null
 
-                # 최근 100건만 유지
+                # Keep only last 100 entries
                 if ($crashList.Count -gt 100) {
                     $crashList = [System.Collections.ArrayList]@($crashList | Select-Object -Last 100)
                 }
@@ -397,9 +387,9 @@ function Watch-ClaudeProcess {
                 $history.totalCrashes = [int]$history.totalCrashes + 1
                 Save-CrashHistory $history
 
-                # 적응형 복구 전략
+                # Adaptive recovery strategy
                 if ($consecutiveCrashes -ge $maxCrashesBeforeFullReset) {
-                    Write-Log "연속 크래시 ${consecutiveCrashes}회 - 전체 캐시 초기화 후 재시작" "FIX"
+                    Write-Log "$consecutiveCrashes consecutive crashes - FULL CACHE RESET + restart" "FIX"
                     Start-Sleep -Seconds 3
                     Clear-AllCache
                     Protect-StabilitySettings
@@ -407,7 +397,7 @@ function Watch-ClaudeProcess {
                     Start-ClaudeSafe -ClaudeExe $claudeExe
 
                 } elseif ($consecutiveCrashes -ge $maxCrashesBeforeCacheClean) {
-                    Write-Log "연속 크래시 ${consecutiveCrashes}회 - 캐시 정리 후 재시작" "FIX"
+                    Write-Log "$consecutiveCrashes consecutive crashes - cache cleanup + restart" "FIX"
                     Start-Sleep -Seconds 3
                     Clear-ProblematicCache
                     Protect-StabilitySettings
@@ -415,9 +405,9 @@ function Watch-ClaudeProcess {
                     Start-ClaudeSafe -ClaudeExe $claudeExe
 
                 } elseif ($consecutiveCrashes -ge $maxCrashesBeforeGpuDisable) {
-                    Write-Log "연속 크래시 ${consecutiveCrashes}회 - GPU 비활성화 후 재시작" "FIX"
+                    Write-Log "$consecutiveCrashes consecutive crashes - disabling GPU + restart" "FIX"
 
-                    # Guardian 설정에 GPU 비활성화 영구 기록
+                    # Permanently record GPU disable in guardian config
                     $cfg = Get-GuardianConfig
                     if (-not $cfg) {
                         $cfg = [PSCustomObject]@{
@@ -435,12 +425,11 @@ function Watch-ClaudeProcess {
                     Start-ClaudeSafe -ClaudeExe $claudeExe
 
                 } else {
-                    Write-Log "크래시 후 안전 모드 재시작 시도" "FIX"
+                    Write-Log "Attempting safe-mode restart after crash..." "FIX"
                     Start-Sleep -Seconds 5
                     Start-ClaudeSafe -ClaudeExe $claudeExe
                 }
             }
-            # Claude가 아직 시작되지 않은 경우 (사용자가 직접 실행하지 않음) -> 대기
             $wasRunning = $false
         }
 
@@ -452,41 +441,41 @@ function Start-ClaudeSafe {
     param([string]$ClaudeExe)
 
     if (-not $ClaudeExe -or -not (Test-Path $ClaudeExe)) {
-        Write-Log "Claude 실행 파일 경로 유효하지 않음" "ERROR"
+        Write-Log "Invalid Claude executable path" "ERROR"
         return
     }
 
-    $args = @()
+    $launchArgs = @()
     $config = Get-GuardianConfig
     $history = Get-CrashHistory
 
-    # 크래시 이력이 있으면 안전 플래그 추가
+    # Add safe flags if crash history exists
     if (($config -and $config.forceDisableGpu) -or ($history.totalCrashes -ge 2)) {
-        $args += "--disable-gpu"
-        $args += "--disable-gpu-compositing"
-        $args += "--disable-gpu-sandbox"
-        $args += "--in-process-gpu"
+        $launchArgs += "--disable-gpu"
+        $launchArgs += "--disable-gpu-compositing"
+        $launchArgs += "--disable-gpu-sandbox"
+        $launchArgs += "--in-process-gpu"
     }
 
-    $argString = $args -join " "
-    Write-Log "Claude Desktop 시작: $ClaudeExe $argString" "INFO"
+    $argString = $launchArgs -join " "
+    Write-Log "Starting Claude Desktop: $ClaudeExe $argString" "INFO"
 
     try {
-        if ($args.Count -gt 0) {
-            Start-Process -FilePath $ClaudeExe -ArgumentList $args -ErrorAction Stop
+        if ($launchArgs.Count -gt 0) {
+            Start-Process -FilePath $ClaudeExe -ArgumentList $launchArgs -ErrorAction Stop
         } else {
             Start-Process -FilePath $ClaudeExe -ErrorAction Stop
         }
-        Write-Log "Claude Desktop 시작 성공" "OK"
+        Write-Log "Claude Desktop started successfully" "OK"
     } catch {
-        Write-Log "Claude Desktop 시작 실패: $_" "ERROR"
+        Write-Log "Failed to start Claude Desktop: $_" "ERROR"
     }
 }
 
 function Clear-ProblematicCache {
-    Write-Log "문제 가능성 있는 캐시 정리 중..." "INFO"
+    Write-Log "Cleaning problematic cache directories..." "INFO"
 
-    # Claude 프로세스 종료
+    # Stop Claude processes
     Get-Process -Name "Claude*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
 
@@ -500,15 +489,15 @@ function Clear-ProblematicCache {
     foreach ($dir in $problematic) {
         if (Test-Path $dir) {
             Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Log "삭제: $dir" "FIX"
+            Write-Log "Deleted: $dir" "FIX"
         }
     }
 }
 
 function Clear-AllCache {
-    Write-Log "전체 캐시 초기화 중..." "INFO"
+    Write-Log "Full cache reset in progress..." "INFO"
 
-    # Claude 프로세스 종료
+    # Stop Claude processes
     Get-Process -Name "Claude*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 3
 
@@ -517,41 +506,41 @@ function Clear-AllCache {
             $sizeMB = [math]::Round((Get-ChildItem -Path $dir -Recurse -Force -ErrorAction SilentlyContinue |
                        Measure-Object -Property Length -Sum).Sum / 1MB, 1)
             Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Log "삭제: $dir (${sizeMB}MB)" "FIX"
+            Write-Log "Deleted: $dir (${sizeMB}MB)" "FIX"
         }
     }
 
-    # Session Storage도 삭제
+    # Also delete Session Storage
     $sessionDir = "$env:APPDATA\Claude\Session Storage"
     if (Test-Path $sessionDir) {
         Remove-Item -Path $sessionDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Log "Session Storage 삭제" "FIX"
+        Write-Log "Deleted Session Storage" "FIX"
     }
 
-    # Local Storage도 삭제
+    # Also delete Local Storage
     $localDir = "$env:APPDATA\Claude\Local Storage"
     if (Test-Path $localDir) {
         Remove-Item -Path $localDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Log "Local Storage 삭제 (재로그인 필요)" "FIX"
+        Write-Log "Deleted Local Storage (re-login required)" "FIX"
     }
 }
 
-# ══════════════════════════════════════════════════════════════
-# 핵심 기능 3: Windows 스케줄 작업 등록 (영구화)
-# ══════════════════════════════════════════════════════════════
+# ==============================================================
+# Core Feature 3: Windows Scheduled Task Registration (persistence)
+# ==============================================================
 function Install-Guardian {
-    Write-Log "Guardian 설치 시작" "INFO"
+    Write-Log "Installing Guardian..." "INFO"
 
     $scriptPath = $MyInvocation.ScriptName
     if (-not $scriptPath) {
         $scriptPath = $PSCommandPath
     }
     if (-not $scriptPath) {
-        Write-Log "스크립트 경로를 결정할 수 없습니다. 수동으로 등록하세요." "ERROR"
+        Write-Log "Cannot determine script path. Please register manually." "ERROR"
         return
     }
 
-    # Guardian 설정 생성
+    # Create guardian config
     $config = [PSCustomObject]@{
         version = $GUARDIAN_VERSION
         installedAt = (Get-Date).ToString("o")
@@ -560,16 +549,16 @@ function Install-Guardian {
         autoWatch = $true
     }
 
-    # 기존 크래시 이력이 있으면 GPU 비활성화 유지
+    # Keep GPU disabled if crash history exists
     $history = Get-CrashHistory
     if ($history.totalCrashes -ge 2) {
         $config.forceDisableGpu = $true
-        Write-Log "기존 크래시 이력 존재 - GPU 비활성화 유지" "WARN"
+        Write-Log "Previous crash history found - keeping GPU disabled" "WARN"
     }
 
     Save-GuardianConfig $config
 
-    # 스케줄 작업 1: 로그인 시 설정 보호 실행
+    # Scheduled Task 1: Settings protection at login
     $protectAction = New-ScheduledTaskAction `
         -Execute "powershell.exe" `
         -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`" -Protect -Silent"
@@ -589,13 +578,13 @@ function Install-Guardian {
             -Action $protectAction `
             -Trigger $protectTrigger `
             -Settings $protectSettings `
-            -Description "Claude Desktop 안정성 설정 보호 (로그인 시 자동 실행)" `
+            -Description "Claude Desktop stability settings protection (auto-run at login)" `
             -ErrorAction Stop | Out-Null
-        Write-Log "스케줄 작업 등록: ${GUARDIAN_NAME}_Protect (로그인 시 설정 보호)" "OK"
+        Write-Log "Scheduled task registered: ${GUARDIAN_NAME}_Protect (settings protection at login)" "OK"
     } catch {
-        Write-Log "스케줄 작업 등록 실패 (관리자 권한 필요): $_" "WARN"
+        Write-Log "Scheduled task registration failed (admin required): $_" "WARN"
 
-        # 대안: 시작 프로그램 폴더에 바로가기 생성
+        # Fallback: create shortcut in Startup folder
         $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\ClaudeGuardian.lnk"
         try {
             $shell = New-Object -ComObject WScript.Shell
@@ -605,19 +594,19 @@ function Install-Guardian {
             $shortcut.WindowStyle = 7  # Minimized
             $shortcut.Description = "Claude Desktop Guardian"
             $shortcut.Save()
-            Write-Log "대안: 시작 프로그램에 바로가기 등록: $startupPath" "OK"
+            Write-Log "Fallback: Added to Startup folder: $startupPath" "OK"
         } catch {
-            Write-Log "시작 프로그램 바로가기 생성도 실패: $_" "ERROR"
+            Write-Log "Startup shortcut creation also failed: $_" "ERROR"
         }
     }
 
-    # 스케줄 작업 2: 감시 프로세스 (백그라운드)
+    # Scheduled Task 2: Process watchdog (background)
     $watchAction = New-ScheduledTaskAction `
         -Execute "powershell.exe" `
         -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`" -Watch -Silent"
 
     $watchTrigger = New-ScheduledTaskTrigger -AtLogOn
-    # 5분 지연 후 시작 (시스템 안정화 대기)
+    # 5 minute delay for system stabilization
     $watchTrigger.Delay = "PT5M"
 
     $watchSettings = New-ScheduledTaskSettingsSet `
@@ -635,20 +624,20 @@ function Install-Guardian {
             -Action $watchAction `
             -Trigger $watchTrigger `
             -Settings $watchSettings `
-            -Description "Claude Desktop 프로세스 감시 및 자동 복구" `
+            -Description "Claude Desktop process monitor and auto-recovery" `
             -ErrorAction Stop | Out-Null
-        Write-Log "스케줄 작업 등록: ${GUARDIAN_NAME}_Watch (프로세스 감시)" "OK"
+        Write-Log "Scheduled task registered: ${GUARDIAN_NAME}_Watch (process monitor)" "OK"
     } catch {
-        Write-Log "감시 스케줄 작업 등록 실패: $_" "WARN"
+        Write-Log "Watch scheduled task registration failed: $_" "WARN"
     }
 
-    # 최초 설정 보호 실행
+    # Run initial settings protection
     $fixCount = Protect-StabilitySettings
 
-    # 안정 실행 배치 파일 생성
+    # Create stable launcher batch file
     Create-StableLauncher
 
-    # 크래시 이력 초기화 (설치 시점부터 새로 카운트)
+    # Reset crash history (count fresh from install)
     $newHistory = @{
         crashes = @()
         totalCrashes = 0
@@ -659,54 +648,53 @@ function Install-Guardian {
 
     Write-Log "" "INFO"
     Write-Log "============================================" "INFO"
-    Write-Log "Guardian 설치 완료!" "OK"
+    Write-Log "Guardian installation complete!" "OK"
     Write-Log "============================================" "INFO"
-    Write-Log "- 로그인 시 자동으로 안정성 설정을 보호합니다" "INFO"
-    Write-Log "- Claude 크래시 시 자동으로 안전 모드 재시작합니다" "INFO"
-    Write-Log "- 업데이트 후 설정 리셋도 자동으로 복구합니다" "INFO"
-    Write-Log "- 로그: $GUARDIAN_LOG_DIR" "INFO"
-    Write-Log "- 제거: .\claude_desktop_guardian.ps1 -Uninstall" "INFO"
+    Write-Log "- Stability settings auto-protected at every login" "INFO"
+    Write-Log "- Auto safe-mode restart on Claude crash" "INFO"
+    Write-Log "- Settings auto-restored after app updates" "INFO"
+    Write-Log "- Logs: $GUARDIAN_LOG_DIR" "INFO"
+    Write-Log "- Uninstall: .\claude_desktop_guardian.ps1 -Uninstall" "INFO"
     Write-Log "============================================" "INFO"
 }
 
 function Uninstall-Guardian {
-    Write-Log "Guardian 제거 시작" "INFO"
+    Write-Log "Uninstalling Guardian..." "INFO"
 
-    # 스케줄 작업 제거
+    # Remove scheduled tasks
     Unregister-ScheduledTask -TaskName "${GUARDIAN_NAME}_Protect" -Confirm:$false -ErrorAction SilentlyContinue
     Unregister-ScheduledTask -TaskName "${GUARDIAN_NAME}_Watch" -Confirm:$false -ErrorAction SilentlyContinue
-    Write-Log "스케줄 작업 제거 완료" "OK"
+    Write-Log "Scheduled tasks removed" "OK"
 
-    # 시작 프로그램 바로가기 제거
+    # Remove startup shortcut
     $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\ClaudeGuardian.lnk"
     if (Test-Path $startupPath) {
         Remove-Item -Path $startupPath -Force -ErrorAction SilentlyContinue
-        Write-Log "시작 프로그램 바로가기 제거" "OK"
+        Write-Log "Startup shortcut removed" "OK"
     }
 
-    # Guardian 설정 파일은 유지 (로그 및 크래시 기록 보존)
-    Write-Log "Guardian 제거 완료 (로그 및 기록은 보존됨)" "OK"
-    Write-Log "로그/기록도 삭제하려면: Remove-Item -Recurse '$GUARDIAN_LOG_DIR'" "INFO"
+    Write-Log "Guardian uninstalled (logs and history preserved)" "OK"
+    Write-Log "To delete logs too: Remove-Item -Recurse '$GUARDIAN_LOG_DIR'" "INFO"
 }
 
 function Create-StableLauncher {
-    $launcherPath = "$env:USERPROFILE\Desktop\Claude_안정실행.bat"
+    $launcherPath = "$env:USERPROFILE\Desktop\Claude_StableMode.bat"
     $content = @"
 @echo off
 chcp 65001 >nul
 echo ============================================
-echo  Claude Desktop 안정 실행 모드
+echo  Claude Desktop - Stable Mode
 echo  (Guardian Protected)
 echo ============================================
 echo.
 
-REM 기존 Claude 프로세스 정리
+REM Kill existing Claude processes
 taskkill /f /im "Claude.exe" >nul 2>&1
 timeout /t 2 >nul
 
-echo [1/3] 기존 프로세스 정리 완료
-echo [2/3] GPU 하드웨어 가속 비활성화 모드
-echo [3/3] Claude Desktop 시작 중...
+echo [1/3] Cleaned up existing processes
+echo [2/3] GPU hardware acceleration DISABLED
+echo [3/3] Starting Claude Desktop...
 echo.
 
 if exist "%LOCALAPPDATA%\Programs\Claude\Claude.exe" (
@@ -714,22 +702,22 @@ if exist "%LOCALAPPDATA%\Programs\Claude\Claude.exe" (
 ) else if exist "%PROGRAMFILES%\Claude\Claude.exe" (
     start "" "%PROGRAMFILES%\Claude\Claude.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --in-process-gpu
 ) else (
-    echo [오류] Claude Desktop을 찾을 수 없습니다.
+    echo [ERROR] Claude Desktop not found.
     pause
     exit /b 1
 )
 
-echo Claude Desktop이 시작되었습니다.
+echo Claude Desktop has started.
 timeout /t 3 >nul
 "@
 
     Set-Content -Path $launcherPath -Value $content -Encoding UTF8
-    Write-Log "안정 실행 바로가기 생성: $launcherPath" "OK"
+    Write-Log "Stable launcher created: $launcherPath" "OK"
 }
 
-# ══════════════════════════════════════════════════════════════
-# 핵심 기능 4: 로그 정리 (오래된 로그 자동 삭제)
-# ══════════════════════════════════════════════════════════════
+# ==============================================================
+# Core Feature 4: Log cleanup (auto-delete old logs)
+# ==============================================================
 function Clean-OldLogs {
     if (-not (Test-Path $GUARDIAN_LOG_DIR)) { return }
 
@@ -741,13 +729,13 @@ function Clean-OldLogs {
     }
 
     if ($oldLogs.Count -gt 0) {
-        Write-Log "오래된 로그 $($oldLogs.Count)개 정리" "INFO"
+        Write-Log "Cleaned $($oldLogs.Count) old log file(s)" "INFO"
     }
 }
 
-# ══════════════════════════════════════════════════════════════
-# 메인 실행 로직
-# ══════════════════════════════════════════════════════════════
+# ==============================================================
+# Main Execution
+# ==============================================================
 Write-Banner
 Clean-OldLogs
 
@@ -756,25 +744,25 @@ if ($Install) {
 } elseif ($Uninstall) {
     Uninstall-Guardian
 } elseif ($Watch) {
-    Write-Log "감시 모드 시작 (Ctrl+C로 종료)" "INFO"
+    Write-Log "Watch mode started (Ctrl+C to stop)" "INFO"
     Protect-StabilitySettings
     Watch-ClaudeProcess
 } elseif ($Protect) {
     Protect-StabilitySettings
 } else {
-    # 파라미터 없이 실행 시 안내
+    # No parameter - show usage
     if (-not $Silent) {
-        Write-Host "  사용법:" -ForegroundColor White
+        Write-Host "  Usage:" -ForegroundColor White
         Write-Host ""
-        Write-Host "    .\claude_desktop_guardian.ps1 -Install    # Guardian 설치 (권장)" -ForegroundColor Green
-        Write-Host "    .\claude_desktop_guardian.ps1 -Watch      # 수동 감시 시작" -ForegroundColor Gray
-        Write-Host "    .\claude_desktop_guardian.ps1 -Protect    # 설정 보호 1회 실행" -ForegroundColor Gray
-        Write-Host "    .\claude_desktop_guardian.ps1 -Uninstall  # Guardian 제거" -ForegroundColor Gray
+        Write-Host "    .\claude_desktop_guardian.ps1 -Install    # Install Guardian (recommended)" -ForegroundColor Green
+        Write-Host "    .\claude_desktop_guardian.ps1 -Watch      # Start manual monitoring" -ForegroundColor Gray
+        Write-Host "    .\claude_desktop_guardian.ps1 -Protect    # Apply stability settings once" -ForegroundColor Gray
+        Write-Host "    .\claude_desktop_guardian.ps1 -Uninstall  # Remove Guardian" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "  최초 사용 시 -Install을 실행하면:" -ForegroundColor White
-        Write-Host "    - 로그인 시 자동으로 안정성 설정이 적용됩니다" -ForegroundColor Gray
-        Write-Host "    - Claude 크래시 시 자동으로 안전 모드 재시작됩니다" -ForegroundColor Gray
-        Write-Host "    - 앱 업데이트 후 설정이 리셋되어도 자동 복구됩니다" -ForegroundColor Gray
+        Write-Host "  First time? Run -Install to:" -ForegroundColor White
+        Write-Host "    - Auto-protect stability settings at every login" -ForegroundColor Gray
+        Write-Host "    - Auto-restart Claude in safe mode on crash" -ForegroundColor Gray
+        Write-Host "    - Auto-restore settings after app updates" -ForegroundColor Gray
         Write-Host ""
     }
 }
