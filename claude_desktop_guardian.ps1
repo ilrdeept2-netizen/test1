@@ -678,7 +678,15 @@ function Uninstall-Guardian {
 }
 
 function Create-StableLauncher {
-    $launcherPath = "$env:USERPROFILE\Desktop\Claude_StableMode.bat"
+    # Use .NET to get correct Desktop path (handles Korean/Unicode usernames)
+    $desktopPath = [Environment]::GetFolderPath('Desktop')
+    if (-not $desktopPath -or -not (Test-Path $desktopPath)) {
+        $desktopPath = "$env:USERPROFILE\Desktop"
+        if (-not (Test-Path $desktopPath)) {
+            New-Item -ItemType Directory -Path $desktopPath -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+    }
+    $launcherPath = Join-Path $desktopPath "Claude_StableMode.bat"
     $content = @"
 @echo off
 chcp 65001 >nul
@@ -711,8 +719,12 @@ echo Claude Desktop has started.
 timeout /t 3 >nul
 "@
 
-    Set-Content -Path $launcherPath -Value $content -Encoding UTF8
-    Write-Log "Stable launcher created: $launcherPath" "OK"
+    try {
+        [System.IO.File]::WriteAllText($launcherPath, $content, [System.Text.Encoding]::UTF8)
+        Write-Log "Stable launcher created: $launcherPath" "OK"
+    } catch {
+        Write-Log "Stable launcher creation failed (non-critical): $_" "WARN"
+    }
 }
 
 # ==============================================================
