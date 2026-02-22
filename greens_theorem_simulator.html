@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Green's Theorem Interactive Simulator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    text-align: center;
+    padding: 32px 20px 16px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid #334155;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  header p { color: #94a3b8; font-size: 1rem; }
+
+  .main-layout {
+    display: flex;
+    max-width: 1400px;
+    margin: 0 auto;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .sidebar {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .panel h2 {
+    font-size: 1rem;
+    color: #38bdf8;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel h2 .icon { font-size: 1.2rem; }
+
+  .canvas-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  canvas {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    cursor: crosshair;
+  }
+
+  /* Controls */
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+
+  label:first-child { margin-top: 0; }
+
+  select, input[type=range] {
+    width: 100%;
+    padding: 8px 10px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  select:focus { border-color: #38bdf8; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 6px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: #334155;
+    margin-top: 6px;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #38bdf8;
+    cursor: pointer;
+  }
+
+  .range-value {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: #334155;
+    color: #cbd5e1;
+  }
+
+  .btn-secondary:hover { background: #475569; }
+
+  .btn-danger {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .btn-danger:hover { background: #dc2626; }
+
+  /* Results */
+  .result-box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 10px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-label { font-size: 0.85rem; color: #94a3b8; }
+
+  .result-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+  }
+
+  .val-line { color: #38bdf8; }
+  .val-area { color: #c084fc; }
+  .val-match { color: #4ade80; }
+  .val-diff { color: #f87171; }
+
+  .match-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .match-yes { background: #166534; color: #4ade80; }
+  .match-no { background: #7f1d1d; color: #fca5a5; }
+
+  /* Theory section */
+  .theory-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: #cbd5e1;
+  }
+
+  .formula {
+    text-align: center;
+    padding: 12px;
+    margin: 10px 0;
+    background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(192,132,252,0.08));
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+  }
+
+  .highlight-blue { color: #38bdf8; font-weight: 600; }
+  .highlight-purple { color: #c084fc; font-weight: 600; }
+
+  /* Instructions */
+  .instructions {
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.6;
+    padding: 8px 0;
+  }
+
+  .instructions li {
+    margin-bottom: 4px;
+    list-style: none;
+  }
+
+  .instructions li::before {
+    content: ">";
+    color: #38bdf8;
+    margin-right: 6px;
+    font-weight: bold;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .legend-line {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 0;
+    width: auto;
+  }
+
+  .tab.active {
+    background: #334155;
+    color: #e2e8f0;
+    border-color: #38bdf8;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Animation indicator */
+  .anim-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #38bdf8;
+    margin-top: 10px;
+  }
+
+  .anim-dot {
+    width: 8px; height: 8px;
+    background: #38bdf8;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .main-layout {
+      flex-direction: column;
+    }
+    .sidebar { width: 100%; }
+  }
+
+  /* Preset shapes */
+  .shape-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .shape-btn {
+    padding: 8px;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 0;
+    width: auto;
+  }
+
+  .shape-btn:hover { border-color: #38bdf8; background: #1e293b; }
+
+  /* Speed control */
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .speed-row input { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Green's Theorem Simulator</h1>
+  <p>닫힌 곡선의 선적분 = 내부 영역의 이중적분 (시각적 체험)</p>
+</header>
+
+<div class="main-layout">
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+
+    <!-- Theory -->
+    <div class="panel">
+      <h2><span class="icon">📐</span> 그린 정리란?</h2>
+      <div class="theory-card">
+        평면 위의 <span class="highlight-blue">닫힌 곡선 C</span>를 따라가며 벡터장의
+        선적분을 계산하면, 그 값은 곡선이 둘러싸는 <span class="highlight-purple">영역 D</span>
+        내부에서 벡터장의 회전(curl)을 모두 더한 것과 같습니다.
+
+        <div class="formula">
+          ∮<sub>C</sub> (P dx + Q dy) = ∬<sub>D</sub> (∂Q/∂x − ∂P/∂y) dA
+        </div>
+
+        <b>쉬운 비유:</b> 수영장 가장자리에서 물의 흐름을 재는 것과,
+        수영장 내부의 모든 소용돌이를 합산하는 것이 같다는 의미입니다.
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="panel">
+      <h2><span class="icon">🎛️</span> 설정</h2>
+
+      <label>벡터장 선택</label>
+      <select id="fieldSelect">
+        <option value="rotation">회전장: P=−y, Q=x</option>
+        <option value="shear">전단장: P=0, Q=x</option>
+        <option value="expand">팽창장: P=x, Q=y</option>
+        <option value="complex1">복합장: P=−y², Q=x²</option>
+        <option value="swirl">소용돌이: P=−y/(x²+y²), Q=x/(x²+y²)</option>
+        <option value="custom">사용자 정의</option>
+      </select>
+
+      <div id="customFieldInputs" class="hidden">
+        <label>P(x, y) =</label>
+        <input type="text" id="customP" value="-y" style="width:100%;padding:6px 10px;background:#0f172a;border:1px solid #475569;border-radius:6px;color:#e2e8f0;font-family:monospace;">
+        <label>Q(x, y) =</label>
+        <input type="text" id="customQ" value="x" style="width:100%;padding:6px 10px;background:#0f172a;border:1px solid #475569;border-radius:6px;color:#e2e8f0;font-family:monospace;">
+        <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">
+          사용 가능: x, y, Math.sin(), Math.cos(), Math.PI 등
+        </div>
+      </div>
+
+      <label>곡선 모양 (프리셋)</label>
+      <div class="shape-grid">
+        <button class="shape-btn" onclick="setShape('circle')">원</button>
+        <button class="shape-btn" onclick="setShape('ellipse')">타원</button>
+        <button class="shape-btn" onclick="setShape('square')">사각형</button>
+        <button class="shape-btn" onclick="setShape('triangle')">삼각형</button>
+      </div>
+
+      <label>곡선 크기</label>
+      <input type="range" id="sizeSlider" min="0.5" max="3" step="0.1" value="1.5">
+      <div class="range-value" id="sizeValue">1.5</div>
+
+      <label>벡터 밀도</label>
+      <input type="range" id="densitySlider" min="8" max="25" step="1" value="14">
+
+      <label>적분 분할 수 (정밀도)</label>
+      <input type="range" id="nSlider" min="20" max="500" step="10" value="200">
+      <div class="range-value" id="nValue">200</div>
+
+      <button class="btn-primary" onclick="calculate()" style="margin-top:14px;">계산 실행</button>
+      <button class="btn-secondary" onclick="animateIntegral()">애니메이션 실행</button>
+      <button class="btn-danger" onclick="resetCanvas()">초기화</button>
+    </div>
+
+    <!-- Drawing instructions -->
+    <div class="panel">
+      <h2><span class="icon">✏️</span> 직접 그리기</h2>
+      <ul class="instructions">
+        <li>캔버스 위에서 마우스를 드래그하여 닫힌 곡선을 그리세요</li>
+        <li>마우스를 놓으면 자동으로 닫힘</li>
+        <li>프리셋 버튼으로 기본 도형도 가능</li>
+        <li>"계산 실행"으로 양쪽 적분값 비교</li>
+      </ul>
+
+      <div class="legend">
+        <div class="legend-item"><div class="legend-line" style="background:#38bdf8;"></div> 곡선 C (선적분)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c084fc;opacity:0.4;"></div> 영역 D (이중적분)</div>
+        <div class="legend-item"><div class="legend-line" style="background:#f97316;"></div> 벡터장</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80;"></div> 적분 진행점</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Canvas + Results -->
+  <div class="canvas-area">
+    <canvas id="mainCanvas" width="800" height="700"></canvas>
+
+    <!-- Results -->
+    <div class="panel">
+      <h2><span class="icon">📊</span> 계산 결과</h2>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('summary')">요약</div>
+        <div class="tab" onclick="switchTab('detail')">상세</div>
+        <div class="tab" onclick="switchTab('explain')">해석</div>
+      </div>
+
+      <div id="tab-summary" class="tab-content active">
+        <div class="result-box">
+          <div class="result-row">
+            <span class="result-label">선적분 ∮<sub>C</sub> (P dx + Q dy)</span>
+            <span class="result-value val-line" id="lineResult">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">이중적분 ∬<sub>D</sub> (∂Q/∂x − ∂P/∂y) dA</span>
+            <span class="result-value val-area" id="areaResult">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">오차</span>
+            <span class="result-value val-diff" id="diffResult">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">일치 여부</span>
+            <span id="matchBadge">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-detail" class="tab-content">
+        <div class="result-box" id="detailBox" style="font-size:0.85rem;line-height:1.8;color:#cbd5e1;">
+          계산을 실행하면 상세 정보가 표시됩니다.
+        </div>
+      </div>
+
+      <div id="tab-explain" class="tab-content">
+        <div class="result-box" id="explainBox" style="font-size:0.85rem;line-height:1.8;color:#cbd5e1;">
+          계산을 실행하면 해석이 표시됩니다.
+        </div>
+      </div>
+
+      <div id="animIndicator" class="anim-indicator hidden">
+        <div class="anim-dot"></div>
+        <span id="animText">애니메이션 진행 중...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== Canvas Setup ====================
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+// High DPI support
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+}
+
+const W = () => canvas.getBoundingClientRect().width;
+const H = () => canvas.getBoundingClientRect().height;
+
+// Coordinate system: math coords centered in canvas
+const SCALE = 80; // pixels per unit
+function toScreen(x, y) {
+  return [W() / 2 + x * SCALE, H() / 2 - y * SCALE];
+}
+function toMath(sx, sy) {
+  return [(sx - W() / 2) / SCALE, (H() / 2 - sy) / SCALE];
+}
+
+// ==================== State ====================
+let curvePoints = []; // math coordinates [{x, y}]
+let isDrawing = false;
+let animationId = null;
+let currentField = 'rotation';
+
+// ==================== Vector Fields ====================
+const fields = {
+  rotation: {
+    P: (x, y) => -y,
+    Q: (x, y) => x,
+    dQdx: (x, y) => 1,
+    dPdy: (x, y) => -1,
+    curl: (x, y) => 2,
+    name: 'P = −y, Q = x',
+    desc: '균일한 회전장. curl = 2로 일정합니다.'
+  },
+  shear: {
+    P: (x, y) => 0,
+    Q: (x, y) => x,
+    dQdx: (x, y) => 1,
+    dPdy: (x, y) => 0,
+    curl: (x, y) => 1,
+    name: 'P = 0, Q = x',
+    desc: '전단(shear)장. curl = 1로 일정합니다.'
+  },
+  expand: {
+    P: (x, y) => x,
+    Q: (x, y) => y,
+    dQdx: (x, y) => 0,
+    dPdy: (x, y) => 0,
+    curl: (x, y) => 0,
+    name: 'P = x, Q = y',
+    desc: '팽창장(발산장). curl = 0이므로 선적분도 0입니다.'
+  },
+  complex1: {
+    P: (x, y) => -y * y,
+    Q: (x, y) => x * x,
+    dQdx: (x, y) => 2 * x,
+    dPdy: (x, y) => -2 * y,
+    curl: (x, y) => 2 * x + 2 * y,
+    name: 'P = −y², Q = x²',
+    desc: 'curl = 2x + 2y로 위치에 따라 변합니다.'
+  },
+  swirl: {
+    P: (x, y) => { const r2 = x*x + y*y; return r2 < 0.01 ? 0 : -y / r2; },
+    Q: (x, y) => { const r2 = x*x + y*y; return r2 < 0.01 ? 0 : x / r2; },
+    dQdx: (x, y) => { const r2 = x*x+y*y; return r2 < 0.01 ? 0 : (y*y - x*x) / (r2*r2); },
+    dPdy: (x, y) => { const r2 = x*x+y*y; return r2 < 0.01 ? 0 : (y*y - x*x) / (r2*r2); },
+    curl: (x, y) => { const r2 = x*x+y*y; return r2 < 0.01 ? 0 : 0; },
+    name: 'P = −y/r², Q = x/r²',
+    desc: '소용돌이장. 원점을 포함하지 않으면 curl=0, 포함하면 2π.'
+  }
+};
+
+let activeField = fields.rotation;
+
+// ==================== Custom Field ====================
+function makeCustomField(pExpr, qExpr) {
+  const makeFunc = (expr) => {
+    try {
+      return new Function('x', 'y', `with(Math){return (${expr});}`);
+    } catch {
+      return () => 0;
+    }
+  };
+  const P = makeFunc(pExpr);
+  const Q = makeFunc(qExpr);
+
+  // Numerical partial derivatives
+  const h = 1e-5;
+  const dQdx = (x, y) => (Q(x + h, y) - Q(x - h, y)) / (2 * h);
+  const dPdy = (x, y) => (P(x, y + h) - P(x, y - h)) / (2 * h);
+  const curl = (x, y) => dQdx(x, y) - dPdy(x, y);
+
+  return { P, Q, dQdx, dPdy, curl, name: `P=${pExpr}, Q=${qExpr}`, desc: '사용자 정의 벡터장입니다.' };
+}
+
+// ==================== Shapes ====================
+function setShape(shape) {
+  const r = parseFloat(document.getElementById('sizeSlider').value);
+  curvePoints = [];
+  const N = 120;
+
+  switch (shape) {
+    case 'circle':
+      for (let i = 0; i <= N; i++) {
+        const t = (2 * Math.PI * i) / N;
+        curvePoints.push({ x: r * Math.cos(t), y: r * Math.sin(t) });
+      }
+      break;
+    case 'ellipse':
+      for (let i = 0; i <= N; i++) {
+        const t = (2 * Math.PI * i) / N;
+        curvePoints.push({ x: r * 1.5 * Math.cos(t), y: r * Math.sin(t) });
+      }
+      break;
+    case 'square': {
+      const s = r;
+      const pts = [[-s,-s],[s,-s],[s,s],[-s,s],[-s,-s]];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const seg = 30;
+        for (let j = 0; j <= seg; j++) {
+          const t = j / seg;
+          curvePoints.push({
+            x: pts[i][0] * (1 - t) + pts[i+1][0] * t,
+            y: pts[i][1] * (1 - t) + pts[i+1][1] * t
+          });
+        }
+      }
+      break;
+    }
+    case 'triangle': {
+      const pts = [
+        [0, r * 1.2],
+        [-r * 1.1, -r * 0.7],
+        [r * 1.1, -r * 0.7],
+        [0, r * 1.2]
+      ];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const seg = 40;
+        for (let j = 0; j <= seg; j++) {
+          const t = j / seg;
+          curvePoints.push({
+            x: pts[i][0] * (1 - t) + pts[i+1][0] * t,
+            y: pts[i][1] * (1 - t) + pts[i+1][1] * t
+          });
+        }
+      }
+      break;
+    }
+  }
+  draw();
+}
+
+// ==================== Drawing on Canvas ====================
+canvas.addEventListener('mousedown', (e) => {
+  if (animationId) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const [mx, my] = toMath(sx, sy);
+  isDrawing = true;
+  curvePoints = [{ x: mx, y: my }];
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDrawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const [mx, my] = toMath(sx, sy);
+  const last = curvePoints[curvePoints.length - 1];
+  const dx = mx - last.x, dy = my - last.y;
+  if (Math.sqrt(dx*dx + dy*dy) > 0.05) {
+    curvePoints.push({ x: mx, y: my });
+    draw();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (!isDrawing) return;
+  isDrawing = false;
+  // Close the curve
+  if (curvePoints.length > 2) {
+    curvePoints.push({ ...curvePoints[0] });
+  }
+  draw();
+});
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t = e.touches[0];
+  canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: t.clientX, clientY: t.clientY }));
+});
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const t = e.touches[0];
+  canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: t.clientX, clientY: t.clientY }));
+});
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  canvas.dispatchEvent(new MouseEvent('mouseup'));
+});
+
+// ==================== Drawing ====================
+function draw(animProgress, animLineProgress) {
+  const w = W(), h = H();
+  ctx.clearRect(0, 0, w, h);
+
+  drawGrid(w, h);
+  drawVectorField(w, h);
+  drawFilledRegion(animProgress);
+  drawCurve(animLineProgress);
+}
+
+function drawGrid(w, h) {
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+
+  // Grid lines
+  const range = 6;
+  for (let i = -range; i <= range; i++) {
+    const [sx] = toScreen(i, 0);
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, h);
+    ctx.stroke();
+
+    const [, sy] = toScreen(0, i);
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(w, sy);
+    ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1.5;
+  const [ox, oy] = toScreen(0, 0);
+  ctx.beginPath();
+  ctx.moveTo(0, oy);
+  ctx.lineTo(w, oy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(ox, 0);
+  ctx.lineTo(ox, h);
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = -range; i <= range; i++) {
+    if (i === 0) continue;
+    const [sx] = toScreen(i, 0);
+    ctx.fillText(i, sx, oy + 14);
+    const [, sy] = toScreen(0, i);
+    ctx.fillText(i, ox - 14, sy + 4);
+  }
+  ctx.fillText('x', w - 12, oy - 6);
+  ctx.fillText('y', ox + 10, 14);
+}
+
+function drawVectorField(w, h) {
+  const density = parseInt(document.getElementById('densitySlider').value);
+  const step = w / density;
+  const arrowScale = 12;
+
+  for (let sx = step / 2; sx < w; sx += step) {
+    for (let sy = step / 2; sy < h; sy += step) {
+      const [mx, my] = toMath(sx, sy);
+      let px, py;
+      try {
+        px = activeField.P(mx, my);
+        py = activeField.Q(mx, my);
+      } catch { continue; }
+
+      const mag = Math.sqrt(px * px + py * py);
+      if (mag < 1e-10 || !isFinite(mag)) continue;
+
+      const maxMag = Math.min(mag, 3);
+      const len = arrowScale * (maxMag / (1 + maxMag * 0.3));
+      const nx = px / mag, ny = py / mag;
+      const ex = sx + nx * len, ey = sy - ny * len;
+
+      // Color by curl
+      let curlVal = 0;
+      try { curlVal = activeField.curl(mx, my); } catch {}
+      const curlColor = curlToColor(curlVal);
+
+      ctx.strokeStyle = curlColor;
+      ctx.fillStyle = curlColor;
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = 0.6;
+
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+
+      // Arrowhead
+      const angle = Math.atan2(-(ny), nx);
+      const aLen = 4;
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - aLen * Math.cos(angle - 0.5), ey + aLen * Math.sin(angle - 0.5));
+      ctx.lineTo(ex - aLen * Math.cos(angle + 0.5), ey + aLen * Math.sin(angle + 0.5));
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+function curlToColor(curl) {
+  const c = Math.max(-3, Math.min(3, curl));
+  if (c > 0) {
+    const t = c / 3;
+    const r = Math.round(249 * t + 100 * (1 - t));
+    const g = Math.round(115 * t + 130 * (1 - t));
+    const b = Math.round(22 * t + 160 * (1 - t));
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const t = -c / 3;
+    const r = Math.round(56 * t + 100 * (1 - t));
+    const g = Math.round(189 * t + 130 * (1 - t));
+    const b = Math.round(248 * t + 160 * (1 - t));
+    return `rgb(${r},${g},${b})`;
+  }
+}
+
+function drawFilledRegion(progress) {
+  if (curvePoints.length < 3) return;
+
+  ctx.save();
+  ctx.beginPath();
+  const [sx0, sy0] = toScreen(curvePoints[0].x, curvePoints[0].y);
+  ctx.moveTo(sx0, sy0);
+
+  const limit = progress !== undefined ? Math.floor(curvePoints.length * progress) : curvePoints.length;
+
+  for (let i = 1; i < curvePoints.length; i++) {
+    const [sx, sy] = toScreen(curvePoints[i].x, curvePoints[i].y);
+    ctx.lineTo(sx, sy);
+  }
+  ctx.closePath();
+
+  // Fill with semi-transparent purple
+  ctx.fillStyle = 'rgba(192, 132, 252, 0.12)';
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCurve(animLineProgress) {
+  if (curvePoints.length < 2) return;
+
+  const total = curvePoints.length;
+  const limit = animLineProgress !== undefined ? Math.floor(total * animLineProgress) : total;
+
+  // Draw full curve faintly
+  ctx.beginPath();
+  const [sx0, sy0] = toScreen(curvePoints[0].x, curvePoints[0].y);
+  ctx.moveTo(sx0, sy0);
+  for (let i = 1; i < total; i++) {
+    const [sx, sy] = toScreen(curvePoints[i].x, curvePoints[i].y);
+    ctx.lineTo(sx, sy);
+  }
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw animated portion
+  if (animLineProgress !== undefined && limit > 1) {
+    ctx.beginPath();
+    const [ax0, ay0] = toScreen(curvePoints[0].x, curvePoints[0].y);
+    ctx.moveTo(ax0, ay0);
+    for (let i = 1; i < limit; i++) {
+      const [sx, sy] = toScreen(curvePoints[i].x, curvePoints[i].y);
+      ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Moving dot
+    const idx = Math.min(limit - 1, total - 1);
+    const [dx, dy] = toScreen(curvePoints[idx].x, curvePoints[idx].y);
+    ctx.beginPath();
+    ctx.arc(dx, dy, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#4ade80';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else {
+    // Draw full bright curve
+    ctx.beginPath();
+    ctx.moveTo(sx0, sy0);
+    for (let i = 1; i < total; i++) {
+      const [sx, sy] = toScreen(curvePoints[i].x, curvePoints[i].y);
+      ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  // Direction arrows on curve
+  const step = Math.max(1, Math.floor(total / 15));
+  for (let i = step; i < total - 1; i += step) {
+    const p1 = curvePoints[i - 1];
+    const p2 = curvePoints[i];
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const mag = Math.sqrt(dx*dx + dy*dy);
+    if (mag < 1e-8) continue;
+
+    const [cx, cy] = toScreen(p2.x, p2.y);
+    const angle = Math.atan2(-dy, dx);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-angle);
+    ctx.beginPath();
+    ctx.moveTo(6, 0);
+    ctx.lineTo(-4, -4);
+    ctx.lineTo(-4, 4);
+    ctx.closePath();
+    ctx.fillStyle = '#38bdf8';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ==================== Calculation ====================
+function calculate() {
+  if (curvePoints.length < 3) {
+    alert('먼저 곡선을 그리거나 프리셋을 선택하세요!');
+    return;
+  }
+
+  updateField();
+  const N = curvePoints.length - 1;
+  const nGrid = parseInt(document.getElementById('nSlider').value);
+
+  // === Line Integral ===
+  let lineIntegral = 0;
+  for (let i = 0; i < N; i++) {
+    const x1 = curvePoints[i].x, y1 = curvePoints[i].y;
+    const x2 = curvePoints[i + 1].x, y2 = curvePoints[i + 1].y;
+    const xm = (x1 + x2) / 2, ym = (y1 + y2) / 2;
+    const dx = x2 - x1, dy = y2 - y1;
+
+    let p, q;
+    try {
+      p = activeField.P(xm, ym);
+      q = activeField.Q(xm, ym);
+    } catch { p = 0; q = 0; }
+
+    lineIntegral += p * dx + q * dy;
+  }
+
+  // === Double Integral (using grid + point-in-polygon) ===
+  // Find bounding box
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of curvePoints) {
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  }
+
+  const margin = 0.1;
+  minX -= margin; maxX += margin;
+  minY -= margin; maxY += margin;
+
+  const stepX = (maxX - minX) / nGrid;
+  const stepY = (maxY - minY) / nGrid;
+  const dA = stepX * stepY;
+
+  let areaIntegral = 0;
+  let pointsInside = 0;
+
+  for (let i = 0; i < nGrid; i++) {
+    for (let j = 0; j < nGrid; j++) {
+      const x = minX + (i + 0.5) * stepX;
+      const y = minY + (j + 0.5) * stepY;
+
+      if (pointInPolygon(x, y, curvePoints)) {
+        let curl;
+        try { curl = activeField.curl(x, y); } catch { curl = 0; }
+        areaIntegral += curl * dA;
+        pointsInside++;
+      }
+    }
+  }
+
+  // Shoelace formula for area
+  let shoelaceArea = 0;
+  for (let i = 0; i < N; i++) {
+    shoelaceArea += curvePoints[i].x * curvePoints[i+1].y - curvePoints[i+1].x * curvePoints[i].y;
+  }
+  shoelaceArea = Math.abs(shoelaceArea) / 2;
+
+  // Display results
+  const diff = Math.abs(lineIntegral - areaIntegral);
+  const relErr = Math.abs(lineIntegral) > 1e-10 ? (diff / Math.abs(lineIntegral) * 100) : (diff < 0.01 ? 0 : diff);
+  const isMatch = relErr < 5 || diff < 0.05;
+
+  document.getElementById('lineResult').textContent = lineIntegral.toFixed(4);
+  document.getElementById('areaResult').textContent = areaIntegral.toFixed(4);
+  document.getElementById('diffResult').textContent = diff.toFixed(4) + ` (${relErr.toFixed(1)}%)`;
+
+  const badge = document.getElementById('matchBadge');
+  if (isMatch) {
+    badge.innerHTML = '<span class="match-badge match-yes">일치!</span>';
+  } else {
+    badge.innerHTML = '<span class="match-badge match-no">불일치 (정밀도 증가 필요)</span>';
+  }
+
+  // Detail tab
+  document.getElementById('detailBox').innerHTML = `
+    <b>벡터장:</b> ${activeField.name}<br>
+    <b>곡선 점 수:</b> ${N}개<br>
+    <b>영역 격자:</b> ${nGrid} x ${nGrid} = ${nGrid * nGrid}개 (내부: ${pointsInside}개)<br>
+    <b>영역 넓이 (Shoelace):</b> ${shoelaceArea.toFixed(4)}<br>
+    <hr style="border-color:#334155;margin:8px 0">
+    <span class="highlight-blue">선적분</span> = Σ [ P(x,y)·Δx + Q(x,y)·Δy ] = <b>${lineIntegral.toFixed(6)}</b><br>
+    <span class="highlight-purple">이중적분</span> = Σ [ curl(x,y) · ΔA ] = <b>${areaIntegral.toFixed(6)}</b><br>
+    <b>절대 오차:</b> ${diff.toFixed(6)}<br>
+    <b>상대 오차:</b> ${relErr.toFixed(2)}%
+  `;
+
+  // Explain tab
+  const fieldInfo = activeField.desc || '';
+  let explainText = `<b>${activeField.name}</b><br>${fieldInfo}<br><br>`;
+
+  if (Math.abs(lineIntegral) < 0.01 && Math.abs(areaIntegral) < 0.01) {
+    explainText += '이 벡터장의 curl이 0이거나 0에 가깝기 때문에, 선적분과 이중적분 모두 거의 0입니다. ';
+    explainText += '이는 벡터장에 "순환(회전)" 성분이 없다는 것을 의미합니다.';
+  } else if (isMatch) {
+    explainText += `그린 정리가 성립합니다! 곡선 경계를 따른 선적분(${lineIntegral.toFixed(3)})과 `;
+    explainText += `내부 영역의 이중적분(${areaIntegral.toFixed(3)})이 `;
+    explainText += `오차 ${relErr.toFixed(1)}% 이내로 일치합니다.<br><br>`;
+    explainText += '격자 분할을 늘리면 더 정밀한 결과를 얻을 수 있습니다.';
+  } else {
+    explainText += '두 값 사이에 차이가 있습니다. 적분 분할 수(정밀도)를 높이거나, ';
+    explainText += '곡선이 제대로 닫혀 있는지 확인하세요. 특이점이 포함된 경우에도 ';
+    explainText += '수치 오차가 발생할 수 있습니다.';
+  }
+
+  document.getElementById('explainBox').innerHTML = explainText;
+
+  draw();
+}
+
+// Point-in-polygon (ray casting)
+function pointInPolygon(x, y, polygon) {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// ==================== Animation ====================
+function animateIntegral() {
+  if (curvePoints.length < 3) {
+    alert('먼저 곡선을 그리거나 프리셋을 선택하세요!');
+    return;
+  }
+
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+    document.getElementById('animIndicator').classList.add('hidden');
+    draw();
+    return;
+  }
+
+  updateField();
+  document.getElementById('animIndicator').classList.remove('hidden');
+
+  const N = curvePoints.length - 1;
+  let lineSum = 0;
+  let frameIdx = 0;
+  const framesTotal = N;
+  const speed = 2;
+
+  function step() {
+    if (frameIdx >= framesTotal) {
+      // Done
+      animationId = null;
+      document.getElementById('animIndicator').classList.add('hidden');
+      calculate();
+      return;
+    }
+
+    // Accumulate line integral
+    for (let k = 0; k < speed && frameIdx < framesTotal; k++, frameIdx++) {
+      const x1 = curvePoints[frameIdx].x, y1 = curvePoints[frameIdx].y;
+      const x2 = curvePoints[frameIdx + 1].x, y2 = curvePoints[frameIdx + 1].y;
+      const xm = (x1 + x2) / 2, ym = (y1 + y2) / 2;
+      const dx = x2 - x1, dy = y2 - y1;
+      let p, q;
+      try { p = activeField.P(xm, ym); q = activeField.Q(xm, ym); } catch { p = 0; q = 0; }
+      lineSum += p * dx + q * dy;
+    }
+
+    const progress = frameIdx / framesTotal;
+    draw(progress, progress);
+
+    document.getElementById('lineResult').textContent = lineSum.toFixed(4);
+    document.getElementById('animText').textContent =
+      `선적분 진행: ${(progress * 100).toFixed(0)}% (누적: ${lineSum.toFixed(4)})`;
+
+    animationId = requestAnimationFrame(step);
+  }
+
+  animationId = requestAnimationFrame(step);
+}
+
+// ==================== Utilities ====================
+function updateField() {
+  const sel = document.getElementById('fieldSelect').value;
+  if (sel === 'custom') {
+    const pExpr = document.getElementById('customP').value;
+    const qExpr = document.getElementById('customQ').value;
+    activeField = makeCustomField(pExpr, qExpr);
+  } else {
+    activeField = fields[sel];
+  }
+  currentField = sel;
+}
+
+function resetCanvas() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+  curvePoints = [];
+  document.getElementById('lineResult').textContent = '—';
+  document.getElementById('areaResult').textContent = '—';
+  document.getElementById('diffResult').textContent = '—';
+  document.getElementById('matchBadge').textContent = '—';
+  document.getElementById('detailBox').textContent = '계산을 실행하면 상세 정보가 표시됩니다.';
+  document.getElementById('explainBox').textContent = '계산을 실행하면 해석이 표시됩니다.';
+  document.getElementById('animIndicator').classList.add('hidden');
+  draw();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ==================== Event Listeners ====================
+document.getElementById('fieldSelect').addEventListener('change', (e) => {
+  const show = e.target.value === 'custom';
+  document.getElementById('customFieldInputs').classList.toggle('hidden', !show);
+  updateField();
+  draw();
+});
+
+document.getElementById('sizeSlider').addEventListener('input', (e) => {
+  document.getElementById('sizeValue').textContent = e.target.value;
+});
+
+document.getElementById('nSlider').addEventListener('input', (e) => {
+  document.getElementById('nValue').textContent = e.target.value;
+});
+
+// ==================== Init ====================
+window.addEventListener('load', () => {
+  resizeCanvas();
+  setShape('circle');
+  draw();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  draw();
+});
+</script>
+
+</body>
+</html>
