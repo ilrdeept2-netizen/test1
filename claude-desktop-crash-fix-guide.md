@@ -126,7 +126,26 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Claude\Cache" -ErrorAction Silent
 # 3. Claude Desktop 재실행
 ```
 
-### 방법 4: 앱 완전 재설치
+### 방법 4: 딥 클린 — 즉시 크래시(Instant Crash) 전용
+
+앱이 **켜자마자 1~2초 만에 즉시 꺼져버리는** 경우, 위의 선별적 캐시 삭제로는 해결이 안 됩니다.
+마지막 세션 렌더링 오류로 인한 크래시 루프(Crash Loop)이므로, 앱 데이터를 **통째로 삭제**해야 합니다.
+
+```powershell
+# 자동 스크립트 실행 (권장)
+.\fix_instant_crash_deepclean.ps1
+
+# 수동으로 진행하려면:
+# 1. 관리자 cmd에서: taskkill /f /im "Claude.exe" /t
+# 2. Windows키 + R → %appdata% → Claude 폴더 삭제
+# 3. Windows키 + R → %localappdata% → Claude, claude-updater 폴더 삭제
+# 4. Claude 바로가기 → 속성 → 대상(T) 끝에 --disable-gpu 추가
+# 5. 실행 후 로그인 직후: Settings > General > "Menu bar" 옵션 ON
+```
+
+> 대화 내역은 클라우드 서버에 보관되므로 삭제되지 않습니다.
+
+### 방법 5: 앱 완전 재설치
 
 위 방법으로 해결되지 않을 경우:
 
@@ -144,7 +163,7 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Programs\Claude" -ErrorAction Sil
 # 4. 최신 버전 설치: https://claude.com/download
 ```
 
-### 방법 5: Cowork VM 관련 수정
+### 방법 6: Cowork VM 관련 수정
 
 Cowork 사용 중 크래시가 발생하는 경우:
 
@@ -162,19 +181,25 @@ Remove-Item -Recurse -Force "$env:APPDATA\Claude\vm_bundles" -ErrorAction Silent
 ## 해결 순서 요약 (우선순위)
 
 ```
+[즉시 크래시?] 앱이 1~2초 만에 꺼지면 → 딥 클린부터
+  .\fix_instant_crash_deepclean.ps1
+    ↓ 일반 크래시이면
 [1순위] 자동 수정 스크립트 실행
   .\fix_claude_desktop_crash.ps1
     ↓ 안 되면
 [2순위] GPU 가속 비활성화 + 캐시 삭제
   --disable-gpu 옵션으로 실행 + 캐시 디렉토리 삭제
     ↓ 안 되면
-[3순위] 앱 완전 재설치
+[3순위] 딥 클린 (즉시 크래시가 아니어도 시도 가치 있음)
+  .\fix_instant_crash_deepclean.ps1
+    ↓ 안 되면
+[4순위] 앱 완전 재설치
   제거 → 잔여 데이터 삭제 → 재부팅 → 재설치
     ↓ 안 되면
-[4순위] 시스템 점검
+[5순위] 시스템 점검
   GPU 드라이버 업데이트, 백신 예외 등록, Windows 업데이트
     ↓ 안 되면
-[5순위] 버그 리포트
+[6순위] 버그 리포트
   로그 수집 후 https://github.com/anthropics/claude-code/issues
     ↓ 급하면
 [대안] 웹 버전 사용

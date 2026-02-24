@@ -143,9 +143,58 @@ chmod +x claude_desktop_guardian.sh
 
 ---
 
-## 즉시 조치 (Guardian 설치 전 응급 처치)
+## 즉시 크래시(Instant Crash) 전용 - 딥 클린
 
-Guardian 설치 전에 지금 당장 앱을 실행해야 한다면:
+앱이 **켜자마자 1~2초 만에 즉시 꺼져버리는** 경우, 선별적 캐시 삭제로는 해결이 안 됩니다.
+앱 데이터를 **통째로 삭제**하여 백지 상태로 초기화해야 합니다.
+
+### 원인
+
+앱이 마지막으로 열어두었던 대화창/코워크 세션을 자동으로 불러오면서 내부 UI 엔진(React)이
+렌더링 중 크래시 → 강제 종료 → 다시 같은 세션 로드 시도 → 무한 루프에 빠진 상태입니다.
+집과 회사 PC에서 동시에 발생하는 이유는 동일 계정의 설정이 동기화되기 때문입니다.
+
+### 자동 스크립트 (권장)
+
+```powershell
+# PowerShell에서 실행 (확인 프롬프트 표시)
+.\fix_instant_crash_deepclean.ps1
+
+# 확인 없이 즉시 실행
+.\fix_instant_crash_deepclean.ps1 -SkipConfirm
+
+# 설정 파일 백업 후 실행
+.\fix_instant_crash_deepclean.ps1 -BackupConfig
+
+# Defender 예외도 함께 등록 (관리자 권한 필요)
+.\fix_instant_crash_deepclean.ps1 -IncludeDefenderExclusion
+```
+
+스크립트가 수행하는 4단계:
+1. 좀비 프로세스 완벽 종료 (taskkill + Get-Process)
+2. 앱 데이터 완전 삭제 (`%APPDATA%\Claude`, `%LOCALAPPDATA%\Claude`, `claude-updater`)
+3. GPU 하드웨어 가속 강제 비활성화 (electron-flags.conf + 바로가기 수정)
+4. 바탕화면에 안정 실행 런처 생성 + 트레이 설정 안내
+
+### 수동 진행 (스크립트 실행이 어려운 경우)
+
+```cmd
+REM 1. 관리자 명령 프롬프트에서 좀비 프로세스 종료
+taskkill /f /im "Claude.exe" /t
+```
+
+```
+2. Windows키 + R → %appdata% → Claude 폴더 삭제
+3. Windows키 + R → %localappdata% → Claude, claude-updater 폴더 삭제
+4. Claude 바로가기 → 속성 → 대상(T) 끝에 --disable-gpu 추가
+5. 실행 후 로그인 직후: Settings > General > "Menu bar" 옵션 ON
+```
+
+---
+
+## 일반 응급 처치 (Guardian 설치 전)
+
+Guardian 설치 전에 지금 당장 앱을 실행해야 하는데 **즉시 크래시는 아닌** 경우:
 
 ### Windows 응급 처치
 
@@ -286,6 +335,7 @@ GPU 가속을 다시 켠 후 크래시가 재발하면 Guardian이 자동으로 
 
 claude_desktop_guardian.ps1          ← [핵심] Windows Guardian (영구 해결)
 claude_desktop_guardian.sh           ← [핵심] macOS Guardian (영구 해결)
+fix_instant_crash_deepclean.ps1      ← [긴급] 즉시 크래시 전용 딥 클린 (Windows)
 fix_claude_desktop_crash.ps1         ← 일회성 진단/수정 도구 (Windows)
 fix_cowork_vhdx_access.ps1           ← Cowork VM 권한 수정 (Windows)
 CLAUDE_DESKTOP_크래시_근본해결.md     ← 이 가이드
