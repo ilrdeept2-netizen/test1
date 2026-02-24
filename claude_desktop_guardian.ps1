@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Claude Desktop Guardian - Persistent crash prevention and auto-recovery system

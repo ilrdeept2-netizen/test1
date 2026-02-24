@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Claude Desktop 앱 자동 종료(크래시) 진단 및 수정 스크립트

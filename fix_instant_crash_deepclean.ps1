@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Claude Desktop "즉시 크래시(Instant Crash)" 전용 딥 클린(Deep Clean) 스크립트

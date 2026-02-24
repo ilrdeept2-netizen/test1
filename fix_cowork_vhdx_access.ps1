@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Claude Cowork VM VHDX 액세스 거부(0x80070005) 오류 자동 수정 스크립트
