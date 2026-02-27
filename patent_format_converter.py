@@ -11,6 +11,8 @@ Word/HWP/PDF → 한국특허청 HLT 형식 자동 변환
 import os
 import sys
 import re
+import zlib
+import struct
 from pathlib import Path
 from datetime import datetime
 from collections import OrderedDict
@@ -194,12 +196,16 @@ class PDFReader:
 
 
 class HWPReader:
-    """HWP 문서 읽기 클래스"""
+    """HWP 문서 읽기 클래스 (HWP5 형식 지원)"""
+
+    # HWP5 레코드 태그 ID
+    HWPTAG_PARA_TEXT = 67
 
     def __init__(self, file_path: str):
         self.file_path = Path(file_path)
         if not self.file_path.exists():
             raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
+        self._compressed = True  # 기본값: 압축됨
 
     def extract_text_with_structure(self) -> Dict[str, List[str]]:
         """구조를 유지하며 텍스트 추출"""
@@ -208,24 +214,7 @@ class HWPReader:
         sections[current_section] = []
 
         try:
-            ole = olefile.OleFileIO(str(self.file_path))
-            streams = ole.listdir()
-            text_content = []
-
-            for stream in streams:
-                stream_name = '/'.join(stream)
-                if 'BodyText' in stream_name or 'Section' in stream_name:
-                    try:
-                        data = ole.openstream(stream).read()
-                        text = self._extract_text_from_stream(data)
-                        if text:
-                            text_content.append(text)
-                    except:
-                        continue
-
-            ole.close()
-
-            full_text = '\n'.join(text_content)
+            full_text = self._extract_hwp5_text()
             lines = full_text.split('\n')
 
             for line in lines:
@@ -247,17 +236,84 @@ class HWPReader:
 
         return sections
 
-    def _extract_text_from_stream(self, data: bytes) -> str:
-        """HWP 스트림에서 텍스트 추출"""
+    def _extract_hwp5_text(self) -> str:
+        """HWP5 OLE 스트림에서 텍스트 추출 (zlib 압축 해제 + 레코드 파싱)"""
+        text_parts = []
+
+        ole = olefile.OleFileIO(str(self.file_path))
         try:
-            text = data.decode('utf-16le', errors='ignore')
-            text = ''.join(char for char in text if char.isprintable() or char in '\n\r\t')
-            return text
-        except:
-            try:
-                return data.decode('utf-8', errors='ignore')
-            except:
-                return ""
+            # FileHeader에서 압축 여부 확인
+            if ole.exists('FileHeader'):
+                header_data = ole.openstream('FileHeader').read()
+                if len(header_data) >= 36:
+                    flags = struct.unpack_from('<I', header_data, 32)[0]
+                    self._compressed = bool(flags & 0x1)
+
+            # BodyText/Section0, Section1, ... 순서대로 읽기
+            section_idx = 0
+            while True:
+                stream_path = f'BodyText/Section{section_idx}'
+                if not ole.exists(stream_path):
+                    break
+
+                data = ole.openstream(stream_path).read()
+
+                # zlib 압축 해제 (raw deflate)
+                if self._compressed:
+                    try:
+                        data = zlib.decompress(data, -15)
+                    except zlib.error:
+                        pass  # 압축되지 않은 경우 그대로 사용
+
+                section_text = self._parse_hwp5_records(data)
+                if section_text:
+                    text_parts.append(section_text)
+
+                section_idx += 1
+        finally:
+            ole.close()
+
+        return '\n'.join(text_parts)
+
+    def _parse_hwp5_records(self, data: bytes) -> str:
+        """HWP5 레코드 바이너리에서 텍스트(HWPTAG_PARA_TEXT) 추출"""
+        text_parts = []
+        offset = 0
+        data_len = len(data)
+
+        while offset + 4 <= data_len:
+            header = struct.unpack_from('<I', data, offset)[0]
+            tag_id = header & 0x3FF
+            size = (header >> 20) & 0xFFF
+            offset += 4
+
+            # 확장 크기 (size == 0xFFF 이면 다음 4바이트가 실제 크기)
+            if size == 0xFFF:
+                if offset + 4 > data_len:
+                    break
+                size = struct.unpack_from('<I', data, offset)[0]
+                offset += 4
+
+            if offset + size > data_len:
+                break
+
+            if tag_id == self.HWPTAG_PARA_TEXT and size > 0:
+                raw = data[offset:offset + size]
+                try:
+                    text = raw.decode('utf-16le')
+                    # 제어 문자 제거 (chr(0)~chr(31) 중 \n, \t 제외)
+                    text = ''.join(
+                        c for c in text
+                        if c >= ' ' or c in '\n\t'
+                    )
+                    if text.strip():
+                        text_parts.append(text.strip())
+                except UnicodeDecodeError:
+                    pass
+
+            offset += size
+
+        return '\n'.join(text_parts)
 
 
 # =====================================================================
@@ -365,12 +421,32 @@ class PatentFormatConverter:
 
     def convert(self) -> str:
         """파일 변환 실행"""
-        sections = self.extract_sections()
+        sections = self.get_sections()
 
         generator = HLTGenerator()
         generator.generate(sections, str(self.output_path))
 
         return str(self.output_path)
+
+    def get_sections(self) -> OrderedDict:
+        """파일 형식에 따라 섹션 추출 (모든 형식 지원)"""
+        if self.file_type == '.docx':
+            return self.extract_sections()
+        else:
+            raw = self._read_document()
+            return self._normalize_sections(raw)
+
+    def _normalize_sections(self, raw: Dict[str, List[str]]) -> OrderedDict:
+        """_read_document() 결과를 SECTION_DEFINITIONS 순서로 정렬된 OrderedDict로 변환"""
+        result = OrderedDict()
+        for section_id in SECTION_DEFINITIONS:
+            if section_id in raw and raw[section_id]:
+                result[section_id] = raw[section_id]
+        # 정의에 없는 섹션도 포함
+        for k, v in raw.items():
+            if k not in result and v:
+                result[k] = v
+        return result
 
     def _create_reader(self):
         """파일 형식에 따른 리더 생성"""

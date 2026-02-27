@@ -234,6 +234,134 @@
             margin: 2px;
             font-weight: bold;
         }
+
+        /* 미리보기 패널 */
+        .preview-panel {
+            display: none;
+            margin-top: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .preview-panel.active {
+            display: block;
+        }
+
+        .preview-header {
+            background: #667eea;
+            color: white;
+            padding: 12px 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-badge {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            padding: 2px 10px;
+            font-size: 12px;
+        }
+
+        .preview-body {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .section-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .section-title {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-count {
+            color: #999;
+            font-weight: normal;
+            font-size: 12px;
+        }
+
+        .section-content {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .section-content .line {
+            margin-bottom: 3px;
+        }
+
+        .section-content .more {
+            color: #999;
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 2;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -264,14 +392,31 @@
                 <div class="file-size" id="fileSize"></div>
             </div>
 
-            <button type="submit" class="btn" id="convertBtn" disabled>
-                변환하기
+            <button type="button" class="btn" id="previewBtn" disabled>
+                섹션 미리보기 &amp; 변환
             </button>
         </form>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <div>변환 중입니다...</div>
+            <div id="loadingText">분석 중입니다...</div>
+        </div>
+
+        <!-- 미리보기 패널 -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="preview-header">
+                <span>추출된 섹션 미리보기</span>
+                <span class="preview-badge" id="sectionCount"></span>
+            </div>
+            <div class="preview-body" id="previewBody"></div>
+        </div>
+
+        <!-- 변환 완료 후 다운로드 버튼 -->
+        <div id="actionRow" style="display:none;">
+            <div class="btn-row">
+                <button class="btn-secondary" id="resetBtn">다시 선택</button>
+                <button class="btn-download" id="downloadBtn">HLT 다운로드</button>
+            </div>
         </div>
 
         <div class="message" id="message"></div>
@@ -288,17 +433,19 @@
         const fileInfo = document.getElementById('fileInfo');
         const fileName = document.getElementById('fileName');
         const fileSize = document.getElementById('fileSize');
-        const convertBtn = document.getElementById('convertBtn');
-        const uploadForm = document.getElementById('uploadForm');
+        const previewBtn = document.getElementById('previewBtn');
         const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
         const message = document.getElementById('message');
+        const previewPanel = document.getElementById('previewPanel');
+        const previewBody = document.getElementById('previewBody');
+        const sectionCount = document.getElementById('sectionCount');
+        const actionRow = document.getElementById('actionRow');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
 
         // 파일 선택 영역 클릭
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // 파일 선택 처리
+        uploadArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileSelect);
 
         // 드래그 앤 드롭
@@ -306,18 +453,12 @@
             e.preventDefault();
             uploadArea.classList.add('dragover');
         });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
                 handleFileSelect();
             }
         });
@@ -325,15 +466,17 @@
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (file) {
-                // 파일 정보 표시
                 fileName.textContent = `📎 ${file.name}`;
                 fileSize.textContent = `크기: ${formatFileSize(file.size)}`;
                 fileInfo.classList.add('active');
-                convertBtn.disabled = false;
-
-                // 업로드 영역 스타일 변경
+                previewBtn.disabled = false;
                 uploadArea.style.borderColor = '#4caf50';
                 uploadArea.style.background = '#f1f8f4';
+
+                // 이전 미리보기 초기화
+                previewPanel.classList.remove('active');
+                actionRow.style.display = 'none';
+                message.classList.remove('active');
             }
         }
 
@@ -345,36 +488,102 @@
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        // 폼 제출 처리
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
+        // [1단계] 미리보기 버튼 클릭
+        previewBtn.addEventListener('click', async () => {
             const file = fileInput.files[0];
-            if (!file) {
-                showMessage('파일을 선택해주세요.', 'error');
-                return;
-            }
+            if (!file) return;
 
-            // UI 업데이트
-            convertBtn.disabled = true;
+            previewBtn.disabled = true;
+            loadingText.textContent = '섹션 분석 중...';
             loading.classList.add('active');
             message.classList.remove('active');
+            previewPanel.classList.remove('active');
+            actionRow.style.display = 'none';
 
-            // FormData 생성
             const formData = new FormData();
             formData.append('file', file);
 
             try {
-                const response = await fetch('/convert', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const resp = await fetch('/preview', { method: 'POST', body: formData });
                 loading.classList.remove('active');
 
-                if (response.ok) {
-                    // 파일 다운로드
-                    const blob = await response.blob();
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    showMessage(`오류: ${err.error}`, 'error');
+                    previewBtn.disabled = false;
+                    return;
+                }
+
+                const data = await resp.json();
+                renderPreview(data);
+                previewPanel.classList.add('active');
+                actionRow.style.display = 'block';
+
+            } catch (err) {
+                loading.classList.remove('active');
+                showMessage(`네트워크 오류: ${err.message}`, 'error');
+                previewBtn.disabled = false;
+            }
+        });
+
+        function renderPreview(data) {
+            previewBody.innerHTML = '';
+            sectionCount.textContent = `${data.section_count}개 섹션`;
+
+            // 누락 섹션 경고
+            if (data.missing_required && data.missing_required.length > 0) {
+                const warn = document.createElement('div');
+                warn.className = 'warning-box';
+                warn.textContent = `⚠ 필수 섹션 누락: ${data.missing_required.join(', ')}`;
+                previewBody.appendChild(warn);
+            }
+
+            data.sections.forEach(sec => {
+                const card = document.createElement('div');
+                card.className = 'section-card';
+
+                const title = document.createElement('div');
+                title.className = 'section-title';
+                title.innerHTML = `【${sec.label}】 <span class="section-count">${sec.total_lines}줄</span>`;
+                card.appendChild(title);
+
+                const content = document.createElement('div');
+                content.className = 'section-content';
+                sec.lines.forEach(line => {
+                    const d = document.createElement('div');
+                    d.className = 'line';
+                    d.textContent = line.length > 80 ? line.substring(0, 80) + '…' : line;
+                    content.appendChild(d);
+                });
+                if (sec.total_lines > sec.lines.length) {
+                    const more = document.createElement('div');
+                    more.className = 'more';
+                    more.textContent = `... 외 ${sec.total_lines - sec.lines.length}줄`;
+                    content.appendChild(more);
+                }
+                card.appendChild(content);
+                previewBody.appendChild(card);
+            });
+        }
+
+        // [2단계] 다운로드 버튼 클릭
+        downloadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            downloadBtn.disabled = true;
+            loadingText.textContent = 'HLT 변환 중...';
+            loading.classList.add('active');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch('/convert', { method: 'POST', body: formData });
+                loading.classList.remove('active');
+
+                if (resp.ok) {
+                    const blob = await resp.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -383,24 +592,22 @@
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
-
-                    showMessage('✓ 변환이 완료되었습니다! HLT 파일이 다운로드됩니다.', 'success');
-
-                    // 폼 리셋
-                    setTimeout(() => {
-                        resetForm();
-                    }, 3000);
+                    showMessage('✓ 변환 완료! HLT 파일이 다운로드됩니다.', 'success');
+                    setTimeout(resetForm, 3000);
                 } else {
-                    const error = await response.json();
-                    showMessage(`오류: ${error.error || '변환에 실패했습니다.'}`, 'error');
-                    convertBtn.disabled = false;
+                    const err = await resp.json();
+                    showMessage(`오류: ${err.error || '변환에 실패했습니다.'}`, 'error');
+                    downloadBtn.disabled = false;
                 }
-            } catch (error) {
+            } catch (err) {
                 loading.classList.remove('active');
-                showMessage(`네트워크 오류: ${error.message}`, 'error');
-                convertBtn.disabled = false;
+                showMessage(`네트워크 오류: ${err.message}`, 'error');
+                downloadBtn.disabled = false;
             }
         });
+
+        // 다시 선택 버튼
+        resetBtn.addEventListener('click', resetForm);
 
         function showMessage(text, type) {
             message.textContent = text;
@@ -408,12 +615,15 @@
         }
 
         function resetForm() {
-            uploadForm.reset();
+            fileInput.value = '';
             fileInfo.classList.remove('active');
-            convertBtn.disabled = true;
+            previewBtn.disabled = true;
             uploadArea.style.borderColor = '#ddd';
             uploadArea.style.background = '#fafafa';
             message.classList.remove('active');
+            previewPanel.classList.remove('active');
+            actionRow.style.display = 'none';
+            downloadBtn.disabled = false;
         }
     </script>
 </body>
