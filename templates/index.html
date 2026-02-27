@@ -538,6 +538,15 @@
                 previewBody.appendChild(warn);
             }
 
+            // 청구항 검증 경고
+            if (data.claim_warnings && data.claim_warnings.length > 0) {
+                const warn = document.createElement('div');
+                warn.className = 'warning-box';
+                warn.innerHTML = `<strong>⚠ 청구항 검증 오류</strong><ul style="margin:6px 0 0 16px;">` +
+                    data.claim_warnings.map(w => `<li>${w}</li>`).join('') + `</ul>`;
+                previewBody.appendChild(warn);
+            }
+
             data.sections.forEach(sec => {
                 const card = document.createElement('div');
                 card.className = 'section-card';

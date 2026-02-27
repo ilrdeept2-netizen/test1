@@ -14,7 +14,7 @@ import traceback
 
 # 변환기 임포트
 try:
-    from patent_format_converter import PatentFormatConverter
+    from patent_format_converter import PatentFormatConverter, parse_claims, validate_claims
 except ImportError:
     print("오류: patent_format_converter.py를 찾을 수 없습니다.")
     sys.exit(1)
@@ -150,10 +150,17 @@ def preview():
             required = ['invention-title', 'technical-field', 'claims', 'abstract']
             missing = [SECTION_LABELS.get(s, s) for s in required if s not in sections]
 
+            # 청구항 검증
+            claim_warnings = []
+            if 'claims' in sections:
+                parsed = parse_claims(sections['claims'])
+                claim_warnings = validate_claims(parsed)
+
             return jsonify({
                 'sections': preview_data,
                 'section_count': len(sections),
                 'missing_required': missing,
+                'claim_warnings': claim_warnings,
                 'filename': filename,
             })
         finally:

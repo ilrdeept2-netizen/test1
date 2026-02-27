@@ -35,38 +35,66 @@ except ImportError as e:
 # =====================================================================
 
 SECTION_DEFINITIONS = OrderedDict([
-    ('invention-title', ['발명의 명칭']),
-    ('technical-field', ['기술분야']),
-    ('background-art', ['발명의 배경이 되는 기술', '배경기술']),
-    ('technical-problem', ['해결하려는 과제', '해결하고자 하는 과제']),
-    ('technical-solution', ['과제의 해결 수단']),
-    ('advantageous-effects', ['발명의 효과']),
-    ('description-of-drawings', ['도면의 간단한 설명']),
-    ('detailed-description', ['발명을 실시하기 위한 구체적인 내용', '실시예']),
-    ('reference-signs', ['부호의 설명']),
-    ('claims', ['특허청구범위', '청구범위']),
-    ('abstract', ['요약서', '요약']),
-    ('representative-drawing', ['대표도면']),
+    ('invention-title', ['발명의 명칭', '명칭', '발명명칭']),
+    ('technical-field', ['기술분야', '기술 분야', '관련기술분야']),
+    ('background-art', ['발명의 배경이 되는 기술', '배경기술', '배경 기술', '종래기술', '발명의 배경']),
+    ('technical-problem', ['해결하려는 과제', '해결하고자 하는 과제', '발명이 해결하려는 과제', '기술적 과제']),
+    ('technical-solution', ['과제의 해결 수단', '해결수단', '과제 해결 수단']),
+    ('advantageous-effects', ['발명의 효과', '효과']),
+    ('description-of-drawings', ['도면의 간단한 설명', '도면 설명', '도면의 설명']),
+    ('detailed-description', ['발명을 실시하기 위한 구체적인 내용', '실시예', '발명의 실시를 위한 구체적 내용',
+                               '발명의 실시예', '구체적인 실시예', '발명의 상세한 설명']),
+    ('reference-signs', ['부호의 설명', '도면 부호', '참조 부호']),
+    ('claims', ['특허청구범위', '청구범위', '청구항', '특허 청구 범위']),
+    ('abstract', ['요약서', '요약', '발명의 요약']),
+    ('representative-drawing', ['대표도면', '대표 도면']),
 ])
+
+# 공백 정규화 함수
+def _normalize(text: str) -> str:
+    return re.sub(r'\s+', '', text)
 
 
 def detect_section(text):
-    """텍스트에서 섹션 헤더를 감지하여 섹션 ID를 반환"""
+    """텍스트에서 섹션 헤더를 감지하여 섹션 ID를 반환.
+
+    매칭 우선순위:
+    1. 정확 일치
+    2. 공백 제거 후 일치
+    3. 키워드 포함 (헤더가 키워드를 포함하거나 키워드가 헤더를 포함)
+    """
     text = text.strip()
     match = re.match(r'[【\[](.*?)[】\]]', text)
     if not match:
         return None
     header = match.group(1).strip()
 
-    # 청구항 N 패턴
+    # 청구항 N 패턴 (청구항 1, 청구항 2, ...)
     if re.match(r'청구항\s*\d+', header):
         return 'claim-item'
 
-    # 섹션 정의에서 매칭
+    header_norm = _normalize(header)
+
+    # 1단계: 정확 일치
     for section_id, keywords in SECTION_DEFINITIONS.items():
         for keyword in keywords:
             if header == keyword:
                 return section_id
+
+    # 2단계: 공백 제거 후 일치
+    for section_id, keywords in SECTION_DEFINITIONS.items():
+        for keyword in keywords:
+            if header_norm == _normalize(keyword):
+                return section_id
+
+    # 3단계: 키워드 포함 관계 (퍼지 매칭)
+    for section_id, keywords in SECTION_DEFINITIONS.items():
+        for keyword in keywords:
+            kw_norm = _normalize(keyword)
+            if kw_norm in header_norm or header_norm in kw_norm:
+                # 너무 짧은 키워드는 오탐 가능성 배제 (2글자 이상)
+                if len(kw_norm) >= 4:
+                    return section_id
 
     return None
 
@@ -99,6 +127,67 @@ def parse_claims(lines):
             claims.append({'num': len(claims) + 1, 'text': line})
 
     return claims
+
+
+def validate_claims(claims: List[Dict]) -> List[str]:
+    """청구항 목록의 오류를 검사하여 경고 메시지 리스트로 반환.
+
+    검사 항목:
+    - 청구항 번호 순서 연속성 (1, 2, 3, ...)
+    - 중복 번호
+    - 종속항 참조 번호 존재 여부 (제N항에 있어서 → N이 있어야 함)
+    - 독립항 존재 여부 (종속항만 있는 경우)
+    """
+    warnings = []
+    if not claims:
+        return ['청구항이 없습니다.']
+
+    nums = [c['num'] for c in claims]
+    num_set = set(nums)
+
+    # 중복 번호 검사
+    seen = set()
+    for n in nums:
+        if n in seen:
+            warnings.append(f'청구항 {n}: 번호 중복')
+        seen.add(n)
+
+    # 순서 연속성 검사 (1부터 시작, 빈 번호 없어야 함)
+    expected = list(range(1, len(num_set) + 1))
+    sorted_nums = sorted(num_set)
+    if sorted_nums != expected:
+        missing = [n for n in expected if n not in num_set]
+        if missing:
+            warnings.append(f'청구항 번호 누락: {missing}')
+        extra = [n for n in sorted_nums if n not in expected]
+        if extra:
+            warnings.append(f'청구항 번호 불연속: {extra}')
+
+    # 종속항 참조 검사 (제N항에 있어서)
+    dep_pattern = re.compile(r'제\s*(\d+)\s*항에\s*(?:있어서|의해서|의해)')
+    independent_nums = set()
+
+    for claim in claims:
+        text = claim['text']
+        deps = dep_pattern.findall(text)
+        if not deps:
+            independent_nums.add(claim['num'])
+        else:
+            for dep_str in deps:
+                dep_num = int(dep_str)
+                if dep_num not in num_set:
+                    warnings.append(
+                        f'청구항 {claim["num"]}: 존재하지 않는 제{dep_num}항 참조'
+                    )
+                if dep_num >= claim['num']:
+                    warnings.append(
+                        f'청구항 {claim["num"]}: 자신보다 나중 번호(제{dep_num}항) 참조'
+                    )
+
+    if not independent_nums:
+        warnings.append('독립항이 없습니다. 청구항 1은 독립항이어야 합니다.')
+
+    return warnings
 
 
 # =====================================================================
