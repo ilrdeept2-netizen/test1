@@ -97,12 +97,79 @@ def convert():
             pass
 
 
+@app.route('/preview', methods=['POST'])
+def preview():
+    """변환 전 섹션 미리보기 (JSON 반환)"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({'error': '지원하지 않는 파일 형식입니다. (.docx, .hwp, .pdf만 가능)'}), 400
+
+        filename = secure_filename(file.filename)
+        input_path = TEMP_DIR / filename
+        file.save(str(input_path))
+
+        try:
+            converter = PatentFormatConverter(str(input_path), str(input_path.with_suffix('.hlt')))
+            sections = converter.get_sections()
+
+            # 섹션 레이블 매핑 (영문 ID → 한국어 이름)
+            SECTION_LABELS = {
+                'invention-title': '발명의 명칭',
+                'technical-field': '기술분야',
+                'background-art': '발명의 배경이 되는 기술',
+                'technical-problem': '해결하려는 과제',
+                'technical-solution': '과제의 해결 수단',
+                'advantageous-effects': '발명의 효과',
+                'description-of-drawings': '도면의 간단한 설명',
+                'detailed-description': '발명을 실시하기 위한 구체적인 내용',
+                'reference-signs': '부호의 설명',
+                'claims': '특허청구범위',
+                'abstract': '요약',
+                'representative-drawing': '대표도면',
+            }
+
+            preview_data = []
+            for section_id, lines in sections.items():
+                label = SECTION_LABELS.get(section_id, section_id)
+                preview_data.append({
+                    'id': section_id,
+                    'label': label,
+                    'lines': lines[:5],       # 미리보기는 최대 5줄
+                    'total_lines': len(lines),
+                })
+
+            # 누락된 필수 섹션 경고
+            required = ['invention-title', 'technical-field', 'claims', 'abstract']
+            missing = [SECTION_LABELS.get(s, s) for s in required if s not in sections]
+
+            return jsonify({
+                'sections': preview_data,
+                'section_count': len(sections),
+                'missing_required': missing,
+                'filename': filename,
+            })
+        finally:
+            if input_path.exists():
+                input_path.unlink()
+
+    except Exception as e:
+        return jsonify({'error': f'미리보기 오류: {str(e)}'}), 500
+
+
 @app.route('/api/status')
 def status():
     """API 상태 확인"""
     return jsonify({
         'status': 'running',
-        'version': '1.0.0',
+        'version': '1.1.0',
         'supported_formats': list(ALLOWED_EXTENSIONS)
     })
 
