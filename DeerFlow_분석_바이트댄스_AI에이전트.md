@@ -93,38 +93,88 @@ DeerFlow는 **실행 인프라**를 제공합니다.
 ### 3-2. 샌드박스 실행 환경
 
 모든 코드 실행이 **격리된 Docker 컨테이너** 안에서 이루어집니다.
-- 파일시스템 접근 가능
-- Bash/Python 완전 지원
-- 스레드별 격리 환경
+
+```
+SandboxProvider (추상)
+├── LocalSandboxProvider   → 로컬 파일시스템 직접 접근
+└── AioSandboxProvider     → Docker 컨테이너 격리
+
+파일시스템 구조:
+/mnt/user-data/
+├── workspace/    # 작업 디렉토리
+├── uploads/      # 업로드 파일
+└── outputs/      # 결과물 출력
+
+내장 도구: bash, ls, read_file, write_file, str_replace
+```
+
+- 스레드별 완전 격리 환경
+- 3가지 배포 모드: Local → Docker → Kubernetes Provisioner
 
 ### 3-3. 영구 메모리 (Persistent Memory)
 
-세션 간 컨텍스트를 유지합니다. 대화가 끝나도 사용자 맥락을 기억합니다.
+단순히 "기억한다"가 아닙니다. **신뢰도 점수 기반 메모리 시스템**입니다.
+
+```
+요청 → MemoryMiddleware → 30초 디바운스 → MemoryUpdater (LLM)
+                                              ↓
+                                    사용자 맥락/사실/선호도 추출
+                                    + 신뢰도 점수 부여
+                                              ↓
+                                    memory.json에 저장
+                                              ↓
+                               다음 대화 시 상위 15개 사실 주입
+```
+
+- 세션 간 컨텍스트 유지
+- 30초 디바운스로 LLM 호출 최소화
+- 완전 로컬 저장 (외부 전송 없음)
 
 ### 3-4. 확장 가능한 스킬 시스템
 
-마크다운 기반 스킬 모듈로 기능을 확장합니다:
-- 리서치 보고서 생성
-- 슬라이드(PPT) 생성
-- 이미지/비디오 생성
-- 팟캐스트 생성 (2인 호스트 형식)
-- 데이터 파이프라인 구축
-- 대시보드 생성
+스킬이 **코드가 아닌 마크다운 파일**이라는 것이 핵심입니다. 비개발자도 작성할 수 있고, 버전 관리와 공유가 쉽습니다.
+
+```
+skills/
+├── public/          # 내장 스킬
+│   ├── research/SKILL.md
+│   ├── report/SKILL.md
+│   ├── slides/SKILL.md
+│   ├── image_gen/SKILL.md
+│   └── video_gen/SKILL.md
+└── custom/          # 사용자 커스텀 스킬
+    └── my_skill/SKILL.md
+```
+
+내장 스킬: 리서치, 보고서, 슬라이드(PPT), 웹페이지, 이미지 생성, 비디오 생성, 팟캐스트(2인 호스트, Volcengine TTS)
 
 ### 3-5. MCP (Model Context Protocol) 통합
 
-커스텀 도구 통합을 위한 MCP 서버를 지원합니다.
+커스텀 도구 통합을 위한 MCP 서버를 지원합니다. OAuth 플로우까지 내장.
 
-### 3-6. 멀티채널 IM 연동
+### 3-6. 멀티채널 IM 연동 (공인 IP 불필요)
 
-Telegram, Slack, Feishu/Lark와 바로 연결됩니다.
+| 채널 | 연결 방식 |
+|------|----------|
+| Telegram | Bot API Long-Polling |
+| Slack | Socket Mode |
+| Feishu/Lark | WebSocket |
+
+지원 커맨드: `/new`, `/status`, `/models`, `/memory`, `/help`
+
+### 3-7. 컨텍스트 엔지니어링
+
+장시간 작업에서 토큰 예산을 관리하기 위한 전략:
+- 공격적인 중간 결과 요약 (Aggressive Summarization)
+- 중간 결과물을 파일시스템으로 오프로드
+- 체크포인팅과 상태 관리
 
 ---
 
 ## 4. 기술 스택
 
 ```
-Backend:   Python + LangChain + LangGraph
+Backend:   Python + LangChain + LangGraph + LiteLLM
 Frontend:  Next.js + Node.js 22+
 패키지:     uv (Python) / pnpm (Node)
 실행환경:   Docker / Kubernetes
@@ -132,8 +182,14 @@ Frontend:  Next.js + Node.js 22+
 검색엔진:   Tavily, Brave, DuckDuckGo, Arxiv
 벡터DB:    Qdrant, Milvus, VikingDB
 RAG:       RAGFlow 지원
-LLM:       OpenAI 호환 엔드포인트 (어떤 LLM이든 연결 가능)
+LLM:       LiteLLM → OpenAI, Qwen, Claude 등 모든 OpenAI 호환 API
+TTS:       Volcengine (팟캐스트용)
+크롤링:     Jina Crawler
 ```
+
+### 내부 구조 심화: 9-미들웨어 체인
+
+에이전트 런타임은 `make_lead_agent(config)`로 생성되며, 동적 모델 선택과 9개의 미들웨어 체인으로 구성됩니다. 이 미들웨어가 메모리, 컨텍스트, 도구 라우팅 등 교차 관심사를 처리합니다.
 
 ---
 
@@ -141,13 +197,27 @@ LLM:       OpenAI 호환 엔드포인트 (어떤 LLM이든 연결 가능)
 
 ```
 deer-flow/
-├── backend/          # Python 서비스, 에이전트, 게이트웨이
+├── .github/          # CI/CD 워크플로우
+├── backend/          # Python 서비스 (에이전트 런타임, 게이트웨이, 프로비저너)
 ├── frontend/         # Web UI (Next.js)
-├── docker/           # 컨테이너 설정
+├── docker/           # 컨테이너 정의
 ├── docs/             # 문서
-├── scripts/          # 유틸리티
-├── skills/public/    # 내장 스킬 라이브러리
-└── Makefile          # 개발 커맨드
+├── scripts/          # 자동화 스크립트
+├── skills/public/    # 내장 스킬 라이브러리 (research, reports, slides 등)
+├── config.yaml       # 모델/도구/샌드박스 설정
+└── Makefile          # 태스크 오케스트레이션
+```
+
+### 빠른 시작
+
+```bash
+# Docker 배포 (프로덕션)
+make docker-init && make docker-start
+
+# 로컬 개발
+make dev
+
+# 접속: http://localhost:2026
 ```
 
 ---
@@ -166,8 +236,11 @@ deer-flow/
 | **Human-in-the-Loop** | 네이티브 지원 | 제한적 | 제한적 | 지원 |
 | **IM 연동** | Telegram/Slack/Lark | 없음 | 없음 | 없음 |
 | **라이선스** | MIT | MIT | MIT | MIT |
+| **적합한 용도** | 코드 실행/파일 I/O가 필요한 자율 멀티스텝 작업 | 탐색적 프로토타이핑 | 팀 메타포 기반 비즈니스 워크플로우 | 조건 분기가 있는 정밀 워크플로우 오케스트레이션 |
 
 **핵심 차이**: DeerFlow는 "에이전트가 추론할 수 있게 해주는 도구"가 아니라, **"에이전트가 실제로 일할 수 있는 실행 환경"**을 제공합니다.
+
+**LangGraph와의 관계**: DeerFlow는 LangGraph와 경쟁하지 않습니다. LangGraph **위에** 구축되어 이를 확장합니다. LangGraph가 상태 머신을 제공한다면, DeerFlow는 그 위에 파일시스템, 샌드박스, 메모리, 스킬, 오케스트레이션 레이어를 올린 **완전한 런타임**입니다.
 
 ---
 
