@@ -310,6 +310,111 @@ Legal 플러그인의 시장 반응을 고려할 때, Anthropic 또는 서드파
 
 ---
 
+## 7부: Claude Cowork 제공 플러그인 전체 리스트
+
+### 7.1 1차 출시 (2026년 1월 30일) — 11개 공식 플러그인
+
+| # | 플러그인 | 주요 기능 |
+|---|---------|-----------|
+| 1 | **Sales** | CRM 연동, 고객 리서치, 통화 준비 |
+| 2 | **Legal** | 계약서 검토, 조항 분석, NDA 분류, 컴플라이언스 |
+| 3 | **Finance** | 회계, 재무 분석, 조정(reconciliation) |
+| 4 | **Marketing** | 캠페인·콘텐츠 워크플로우 |
+| 5 | **Support** | 고객 지원 워크플로우 |
+| 6 | **Product** | 제품 문서화 |
+| 7 | **Data Analysis** | 데이터 웨어하우스 조회 (Snowflake, BigQuery), 시각화 |
+| 8 | **Enterprise Search** | 크로스 시스템 정보 검색 |
+| 9 | **Research** | 리서치 합성 |
+| 10 | **Plugin Manager** | 커스텀 플러그인 생성 도구 |
+| 11 | **(기타 1종)** | 문서화 미확인 |
+
+> 모든 공식 플러그인은 **오픈소스**이며, [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) GitHub 리포에 공개. Claude Pro/Team/Enterprise 구독 필요.
+
+### 7.2 2차 확장 (2026년 2월 24일) — 12개 추가
+
+| # | 플러그인 | 주요 기능 |
+|---|---------|-----------|
+| 12 | **HR** | 인사 워크플로우 |
+| 13 | **Engineering** | 개발·엔지니어링 워크플로우 |
+| 14 | **Design** | 디자인 전용 워크플로우 |
+| 15 | **Operations** | 운영 프로세스 관리 |
+| 16 | **Financial Analysis** | 재무 분석 심화 |
+| 17 | **Investment Banking** | 투자은행 업무 |
+| 18 | **Equity Research** | 주식 리서치 |
+| 19 | **Private Equity** | 사모펀드 업무 |
+| 20 | **Wealth Management** | 자산관리 |
+| 21-23 | **(기타)** | 상세 미확인 |
+
+---
+
+## 8부: 왜 Claude Code가 아니라 Cowork가 시장을 흔들었는가?
+
+Claude Code도 MCP, Skills, Plugins로 동일한 기능 확장이 가능하다. 그런데 왜 Cowork 플러그인이 시장에 **$2,850억(약 380조원)** 규모의 충격을 준 것일까?
+
+### 8.1 핵심 차이: "누가 쓸 수 있느냐"의 문제
+
+| 구분 | Claude Code | Claude Cowork |
+|------|-------------|---------------|
+| **인터페이스** | 터미널 CLI | 데스크톱 GUI (Cowork 탭) |
+| **대상 사용자** | 소프트웨어 개발자 | 비개발자 (지식근로자 전체) |
+| **자율성** | 중간 (세션 기반, 대화형) | 높음 (백그라운드 실행, 병렬 작업) |
+| **플러그인 설치** | MCP 직접 설정, Skills 수동 작성 | 마켓플레이스에서 원클릭 |
+| **잠재 사용자 규모** | 수백만 명 | **수억 명** |
+
+### 8.2 시장 공포의 3가지 이유
+
+#### ① "응용 레이어 침범" — 모델 제공자가 앱이 되었다
+
+기존 구도:
+```
+Anthropic (모델) → API → LegalZoom/Thomson Reuters (앱) → 최종 사용자
+```
+
+Cowork 플러그인 이후:
+```
+Anthropic (모델 + 앱) → 최종 사용자
+                      ↑
+              LegalZoom/Thomson Reuters는 어디로?
+```
+
+Claude Code도 기술적으로 동일한 일을 할 수 있지만, 사용하려면 **터미널을 열고 CLI 명령어를 쳐야** 한다. 법무팀 변호사, 영업 사원, 재무 담당자가 이걸 할까? **안 한다.**
+
+Cowork는 이들이 **버튼 하나로** `/review-contract`를 실행할 수 있게 만들었다. 이것이 Thomson Reuters의 주가를 16% 떨어뜨린 진짜 이유다.
+
+#### ② "사소한 업데이트"가 SaaS 비즈니스 모델 자체를 위협
+
+Anthropic은 이 플러그인들을 "relatively minor product update(비교적 사소한 제품 업데이트)"라고 표현했다. 그런데 시장은 다르게 읽었다:
+
+- 플러그인의 실체는 **마크다운 파일** 수준 (~200줄의 시스템 프롬프트)
+- 이것만으로 월 수백~수천 달러짜리 SaaS 도구의 핵심 기능을 대체
+- **월 $20 구독에 무료 포함**
+
+→ "이 정도 수준의 것을 이렇게 쉽게 만들 수 있다면, 기존 SaaS의 per-seat 과금 모델은 지속 가능한가?" 라는 근본적 질문이 제기되었다.
+
+#### ③ 11개 업종 동시 타격 — 범용 위협의 증명
+
+Claude Code가 사이버보안 도구(Claude Code Security)를 출시했을 때도 주가가 빠졌다 (JFrog -25%, CrowdStrike -11%). 하지만 이건 **1개 업종**에 국한된다.
+
+Cowork는 **한 번에 11개 업종 플러그인**을 내놓으면서, "어떤 지식근로 영역이든 플러그인 하나로 자동화할 수 있다"는 메시지를 시장에 보냈다.
+
+### 8.3 시장 영향 요약
+
+| 요인 | Claude Code | Claude Cowork |
+|------|-------------|---------------|
+| **사용 난이도** | 높음 (CLI, 설정 필요) | 낮음 (GUI, 원클릭) |
+| **대상 사용자** | 개발자 | **모든 지식근로자** |
+| **경쟁 대상** | GitHub Copilot, Cursor 등 | **LegalZoom, Thomson Reuters, Salesforce, ServiceNow** |
+| **시장 반응** | 사이버보안주 하락 (1개 업종) | **$2,850억 시총 증발 (10+ 업종)** |
+| **위협 본질** | "개발자 도구 경쟁" | **"SaaS 비즈니스 모델 자체에 대한 위협"** |
+
+> **한 마디로**: Claude Code와 Cowork의 기술적 기반은 동일하다. 차이는 **접근성**이다. 변호사가 터미널을 열지는 않지만, 데스크톱 앱에서 `/review-contract`는 클릭한다. 그 접근성의 차이가 $2,850억의 시장 충격이 된 것이다.
+
+### 8.4 과잉반응인가?
+
+시장의 반응은 "10년치 파괴를 1주일에 반영(priced in a decade of disruption in a week)"한 측면이 있다는 분석도 있다. Legal 플러그인은 본질적으로 시스템 프롬프트이며, 검증 레이어나 관할권별 로직이 없다. 그러나 장기적으로 기존 SaaS 기업들이 진화해야 한다는 방향성 자체는 명확하다.
+
+---
+
 ## 참고 자료
 
 - [Claude Cowork Legal Plugin - Anthropic 공식](https://claude.com/plugins/legal)
@@ -318,6 +423,12 @@ Legal 플러그인의 시장 반응을 고려할 때, Anthropic 또는 서드파
 - [Anthropic Moves Into Legal Tech - Artificial Lawyer](https://www.artificiallawyer.com/2026/02/02/anthropic-moves-into-legal-tech/)
 - [Pramata Extension for Legal Plugin](https://www.pramata.com/blog/claude-cowork-legal-plugin-contract-management/)
 - [Claude Cowork Legal Beyond the Hype - Kallam](https://www.kallam.ai/blog/claude-cowork-legal-beyond-hype)
+- [Claude Cowork Plugins Complete Guide](https://claudecowork.im/blog/claude-cowork-plugins-complete-guide)
+- [Anthropic's Legal AI Plugin Triggers $285B Selloff - Elephas](https://elephas.app/resources/anthropic-legal-ai-stock-selloff)
+- [Claude Triggered a Trillion-Dollar Selloff - Fortune](https://fortune.com/2026/02/06/anthropic-claude-opus-4-6-stock-selloff-new-upgrade/)
+- [OpenClaw vs Claude Code vs Cowork - Medium](https://medium.com/@jameslieu2009/openclaw-vs-claude-code-vs-cowork-architecture-security-and-market-impact-c89f6e9e0e01)
+- [Market Reaction or Overreaction? - ComplexDiscovery](https://complexdiscovery.com/market-reaction-or-overreaction-anthropics-legal-plugin-and-the-facts-so-far/)
+- [Panic Rises in Legal Industry - AI Business](https://aibusiness.com/agentic-ai/panic-rises-in-legal-industry-due-to-anthropic-s-ai-plugins)
 - [Claude Code MCP 공식 문서](https://code.claude.com/docs/en/mcp)
 - [Claude Code Skills 공식 문서](https://code.claude.com/docs/en/skills)
 - [Claude Code Plugins 공식 문서](https://code.claude.com/docs/en/plugins)
