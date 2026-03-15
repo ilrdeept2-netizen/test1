@@ -150,9 +150,10 @@ Google Embedding을 사용하려면 **Gemini API 키**가 필요합니다. 무�
 
 | 항목 | 무료 한도 |
 |------|----------|
-| 임베딩 요청 | 분당 수십 회 (개인 사용에 충분) |
+| 임베딩 요청 | 분당 최대 100회, 하루 1,000회 (개인 사용에 충분) |
 | 비용 | 완전 무료 |
 | 신용카드 | 불필요 |
+| 참고 | 한도는 프로젝트 단위 적용, 매일 자정(태평양시간) 초기화 |
 
 ---
 
@@ -184,22 +185,27 @@ $env:GEMINI_API_KEY="여기에_API_키_붙여넣기"
 
 OpenClaw 설정 파일을 열어서 Google Embedding을 활성화합니다.
 
-설정 파일 위치: `~/.openclaw/config.json5`
+설정 파일 위치: `~/.openclaw/openclaw.json`
+
+**방법 A: 명령어로 설정 (가장 쉬움)**
+
+```bash
+openclaw onboard --auth-choice google-api-key
+```
+
+화면의 안내를 따라가면 자동으로 설정됩니다.
+
+**방법 B: 설정 파일 직접 수정**
 
 아래 내용을 설정 파일의 `agents` 섹션에 추가하세요:
 
-```json5
+```json
 {
   "agents": {
     "defaults": {
       "memorySearch": {
-        "provider": "gemini",
-        "model": "text-embedding-004",
-        "remote": {
-          "batch": {
-            "enabled": false
-          }
-        }
+        "provider": "google",
+        "model": "text-embedding-004"
       }
     }
   }
@@ -207,9 +213,10 @@ OpenClaw 설정 파일을 열어서 Google Embedding을 활성화합니다.
 ```
 
 > **설정 팁:**
-> - `"provider": "gemini"` → Google의 Gemini를 임베딩 제공자로 사용
-> - `"model": "text-embedding-004"` → Google의 최신 텍스트 임베딩 모델
-> - `batch.enabled: false` → 안정성을 위해 배치 모드 비활성화 (권장)
+> - `"provider": "google"` → Google을 임베딩 제공자로 사용
+> - `"model": "text-embedding-004"` → 가장 안정적인 무료 임베딩 모델 (768차원)
+> - 최신 모델을 쓰고 싶다면 `"gemini-embedding-001"` (3072차원, 100개 이상 언어 지원)도 가능
+> - API 키는 환경 변수에 두고, 설정 파일에 직접 넣지 마세요 (보안)
 
 ### 6-3. 설정 검증
 
@@ -316,7 +323,10 @@ Gemini API 키 발급에 신용카드가 필요 없습니다.
 **A:** OpenClaw이 자동으로 감지하고 전체 인덱스를 다시 생성합니다. 수동 작업이 필요 없습니다.
 
 ### Q: 인덱스가 꼬인 것 같아요
-**A:** `~/.openclaw/memory/` 폴더에서 SQLite 파일을 삭제하면 처음부터 다시 인덱싱합니다.
+**A:** `~/.openclaw/memory/` 폴더에서 SQLite 파일을 삭제하면 처음부터 다시 인덱싱합니다. 임베딩 모델을 변경하면 OpenClaw이 자동으로 감지하고 재인덱싱합니다.
+
+### Q: 최신 임베딩 모델도 쓸 수 있나요?
+**A:** 네. `gemini-embedding-001` (텍스트 전용, 3072차원) 또는 `gemini-embedding-2-preview` (멀티모달 — 텍스트, 이미지, 영상, 오디오, PDF 지원) 모델도 설정 가능합니다. 단, 모델을 바꾸면 차원 수가 달라져서 기존 인덱스를 삭제해야 합니다.
 
 ### Q: Windows에서도 되나요?
 **A:** 네. WSL2(Windows Subsystem for Linux) 사용을 권장하지만, PowerShell에서도 설치 가능합니다.
@@ -330,7 +340,7 @@ Gemini API 키 발급에 신용카드가 필요 없습니다.
 2. OpenClaw 설치      → curl 또는 npm 명령어 1줄
 3. Gemini API 키 발급  → aistudio.google.com에서 클릭 3번
 4. API 키 등록        → export GEMINI_API_KEY="키값"
-5. 설정 파일 수정      → config.json5에 provider: "gemini" 추가
+5. 설정 파일 수정      → openclaw.json에 provider: "google" 추가
 6. 메모리 폴더 생성    → mkdir + MEMORY.md 작성
 7. 확인               → openclaw doctor
 ```
