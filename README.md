@@ -18,18 +18,21 @@
 │   ├── templates/               # 웹 UI 템플릿
 │   └── tests/                   # 테스트 코드 및 샘플 파일
 │
-├── tools/                 # 기타 도구
+├── tools/                 # 기타 도구 & 시각화
 │   ├── pdf-converter/           # PDF → PPT 변환기
 │   ├── ai-news-digest/          # AI 뉴스 다이제스트
-│   ├── example.py
+│   ├── compound-interest-visualization.html  # 복리 시각화
 │   ├── figma_visualization_sample.html
-│   └── greens_theorem_simulator.html
+│   ├── greens_theorem_simulator.html
+│   └── example.py
 │
 ├── docs/                  # 문서
 │   ├── claude-code/             # Claude Code 가이드
 │   ├── claude-cowork/           # Claude Cowork 배포/운영
 │   ├── claude-desktop/          # Claude Desktop 트러블슈팅
 │   ├── research/                # 리서치/분석 문서
+│   ├── strategy/                # 전략/방향 문서
+│   ├── guides/                  # 설정/연동 가이드
 │   └── personal/                # 개인 메모
 │
 ├── .github/workflows/     # GitHub Actions
