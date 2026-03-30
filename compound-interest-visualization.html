@@ -11,12 +11,12 @@
             background: #0f172a;
             color: #e2e8f0;
             min-height: 100vh;
-            padding: 2rem;
+            padding: 2rem 1.5rem;
         }
         h1 {
             text-align: center;
             font-size: 2rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             background: linear-gradient(135deg, #38bdf8, #818cf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -25,343 +25,466 @@
             text-align: center;
             color: #94a3b8;
             margin-bottom: 2rem;
+            font-size: 0.95rem;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1160px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 300px 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
         .controls {
             background: #1e293b;
             border-radius: 16px;
             padding: 1.5rem;
             border: 1px solid #334155;
+            align-self: start;
         }
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
+        .control-group { margin-bottom: 1.5rem; }
+        .control-group:last-child { margin-bottom: 0; }
         .control-group label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #94a3b8;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
         }
         .control-group .value-display {
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             color: #38bdf8;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.4rem;
         }
         input[type="range"] {
             width: 100%;
             accent-color: #818cf8;
             cursor: pointer;
         }
+        .divider { border: none; border-top: 1px solid #334155; margin: 1.2rem 0; }
+        .rule72 {
+            background: #0f172a;
+            border: 1px solid #7c3aed44;
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+        }
+        .rule72 .r72-title { font-size: 0.75rem; color: #a78bfa; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+        .rule72 .r72-value { font-size: 1.3rem; font-weight: 700; color: #c084fc; }
+        .rule72 .r72-desc  { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+        .right-col { display: flex; flex-direction: column; gap: 1.5rem; }
         .chart-area {
             background: #1e293b;
             border-radius: 16px;
             padding: 1.5rem;
             border: 1px solid #334155;
-            position: relative;
         }
-        canvas {
-            width: 100%;
-            height: 420px;
-        }
-        .results {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 1.5rem;
-            grid-column: 1 / -1;
-        }
-        .result-card {
-            background: #1e293b;
-            border-radius: 12px;
-            padding: 1.2rem;
-            border: 1px solid #334155;
-            text-align: center;
-        }
-        .result-card .label {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-bottom: 0.3rem;
-        }
-        .result-card .amount {
-            font-size: 1.4rem;
-            font-weight: 700;
-        }
-        .result-card .amount.total { color: #38bdf8; }
-        .result-card .amount.interest { color: #34d399; }
-        .result-card .amount.ratio { color: #fbbf24; }
+        canvas { width: 100%; height: 400px; display: block; }
         .legend {
             display: flex;
             gap: 1.5rem;
             justify-content: center;
             margin-top: 1rem;
-            grid-column: 1 / -1;
+            flex-wrap: wrap;
         }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.85rem;
-            color: #94a3b8;
-        }
-        .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-        }
-        .formula {
-            grid-column: 1 / -1;
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #94a3b8; }
+        .legend-dot  { width: 14px; height: 10px; border-radius: 3px; }
+        .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .result-card {
             background: #1e293b;
-            border-radius: 12px;
-            padding: 1.2rem 1.5rem;
+            border-radius: 14px;
+            padding: 1.2rem 1rem;
+            border: 1px solid #334155;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .result-card:hover { border-color: #475569; }
+        .result-card .r-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+        .result-card .r-value { font-size: 1.35rem; font-weight: 800; }
+        .result-card .r-sub   { font-size: 0.72rem; color: #64748b; margin-top: 0.3rem; }
+        .r-value.c-blue   { color: #38bdf8; }
+        .r-value.c-green  { color: #34d399; }
+        .r-value.c-yellow { color: #fbbf24; }
+        .formula {
+            background: #1e293b;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
             border: 1px solid #334155;
             text-align: center;
         }
-        .formula code {
-            font-size: 1.1rem;
-            color: #c084fc;
-            font-family: 'Courier New', monospace;
+        .formula code { font-size: 1rem; color: #c084fc; font-family: 'Courier New', monospace; }
+        .formula .f-desc { font-size: 0.75rem; color: #64748b; margin-top: 0.4rem; }
+        .milestones {
+            background: #1e293b;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            border: 1px solid #334155;
         }
-        .formula .desc {
+        .milestones h3 { font-size: 0.82rem; color: #64748b; letter-spacing: 0.04em; margin-bottom: 0.8rem; }
+        .milestone-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+        .milestone-chip {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+        .milestone-chip span { color: #fbbf24; font-weight: 700; }
+        .table-section {
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #334155;
+        }
+        .table-header span { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; }
+        .toggle-btn {
+            background: #334155;
+            color: #94a3b8;
+            border: none;
+            border-radius: 8px;
+            padding: 0.35rem 0.85rem;
             font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 0.4rem;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        @media (max-width: 768px) {
+        .toggle-btn:hover { background: #475569; color: #e2e8f0; }
+        .table-wrapper { max-height: 320px; overflow-y: auto; display: none; }
+        .table-wrapper.open { display: block; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+        thead th {
+            background: #0f172a;
+            color: #64748b;
+            padding: 0.6rem 1rem;
+            text-align: right;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+        thead th:first-child { text-align: center; }
+        tbody tr { border-bottom: 1px solid #1e293b55; }
+        tbody tr:hover { background: #263244; }
+        tbody td { padding: 0.55rem 1rem; text-align: right; color: #cbd5e1; }
+        tbody td:first-child { text-align: center; color: #64748b; font-weight: 600; }
+        .td-compound { color: #38bdf8 !important; font-weight: 600; }
+        .td-simple   { color: #f87171 !important; }
+        .td-diff     { color: #34d399 !important; }
+        .table-wrapper::-webkit-scrollbar { width: 6px; }
+        .table-wrapper::-webkit-scrollbar-track { background: #0f172a; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        @media (max-width: 800px) {
             .container { grid-template-columns: 1fr; }
-            .results { grid-template-columns: 1fr; }
+            .results   { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <h1>복리 계산 시각화</h1>
-    <p class="subtitle">단리 vs 복리의 차이를 직접 확인해보세요</p>
+<h1>복리 계산 시각화</h1>
+<p class="subtitle">단리 vs 복리 — 시간이 지날수록 벌어지는 격차를 확인하세요</p>
 
-    <div class="container">
-        <div class="controls">
-            <div class="control-group">
-                <label>원금 (초기 투자금)</label>
-                <div class="value-display" id="principalDisplay">1,000만원</div>
-                <input type="range" id="principal" min="100" max="10000" step="100" value="1000">
-            </div>
-            <div class="control-group">
-                <label>연이율 (%)</label>
-                <div class="value-display" id="rateDisplay">7%</div>
-                <input type="range" id="rate" min="1" max="30" step="0.5" value="7">
-            </div>
-            <div class="control-group">
-                <label>투자 기간 (년)</label>
-                <div class="value-display" id="yearsDisplay">20년</div>
-                <input type="range" id="years" min="1" max="50" step="1" value="20">
-            </div>
-            <div class="control-group">
-                <label>복리 주기</label>
-                <div class="value-display" id="freqDisplay">월복리 (12회/년)</div>
-                <input type="range" id="frequency" min="1" max="365" step="1" value="12">
-            </div>
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="controls">
+        <div class="control-group">
+            <label>원금 (초기 투자금)</label>
+            <div class="value-display" id="principalDisplay">1,000만원</div>
+            <input type="range" id="principal" min="100" max="10000" step="100" value="1000">
         </div>
+        <div class="control-group">
+            <label>연이율 (%)</label>
+            <div class="value-display" id="rateDisplay">7%</div>
+            <input type="range" id="rate" min="1" max="30" step="0.5" value="7">
+        </div>
+        <div class="control-group">
+            <label>투자 기간 (년)</label>
+            <div class="value-display" id="yearsDisplay">20년</div>
+            <input type="range" id="years" min="1" max="50" step="1" value="20">
+        </div>
+        <div class="control-group">
+            <label>복리 주기</label>
+            <div class="value-display" id="freqDisplay">월복리 (12회/년)</div>
+            <input type="range" id="frequency" min="1" max="365" step="1" value="12">
+        </div>
+
+        <hr class="divider">
+
+        <div class="rule72">
+            <div class="r72-title">⚡ 72의 법칙</div>
+            <div class="r72-value" id="rule72Value">약 10.3년</div>
+            <div class="r72-desc" id="rule72Desc">원금이 2배가 되는 예상 시간<br><code style="color:#a78bfa">72 ÷ 연이율</code></div>
+        </div>
+    </aside>
+
+    <!-- Right column -->
+    <div class="right-col">
 
         <div class="chart-area">
             <canvas id="chart"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#38bdf8"></div> 복리
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#f87171;opacity:.7"></div> 단리
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:rgba(129,140,248,0.25);border:1px solid #818cf8"></div> 원금
+                </div>
+            </div>
         </div>
 
         <div class="results">
             <div class="result-card">
-                <div class="label">복리 최종 금액</div>
-                <div class="amount total" id="totalAmount">-</div>
+                <div class="r-label">복리 최종 금액</div>
+                <div class="r-value c-blue" id="totalAmount">—</div>
+                <div class="r-sub" id="totalSub">—</div>
             </div>
             <div class="result-card">
-                <div class="label">이자 수익</div>
-                <div class="amount interest" id="interestAmount">-</div>
+                <div class="r-label">이자 수익</div>
+                <div class="r-value c-green" id="interestAmount">—</div>
+                <div class="r-sub" id="interestSub">—</div>
             </div>
             <div class="result-card">
-                <div class="label">수익률 (단리 대비 추가 수익)</div>
-                <div class="amount ratio" id="extraGain">-</div>
+                <div class="r-label">단리 대비 추가 수익</div>
+                <div class="r-value c-yellow" id="extraGain">—</div>
+                <div class="r-sub" id="extraSub">—</div>
             </div>
         </div>
 
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-dot" style="background:#38bdf8"></div> 복리
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background:#f87171"></div> 단리
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background:rgba(56,189,248,0.15)"></div> 복리 이자 영역
-            </div>
+        <div class="milestones">
+            <h3>배수 달성 시점</h3>
+            <div class="milestone-list" id="milestoneList"></div>
         </div>
 
         <div class="formula">
             <code>A = P &times; (1 + r/n)<sup>n&times;t</sup></code>
-            <div class="desc">A = 최종 금액, P = 원금, r = 연이율, n = 복리 주기, t = 기간(년)</div>
+            <div class="f-desc">A = 최종 금액 &nbsp;|&nbsp; P = 원금 &nbsp;|&nbsp; r = 연이율 &nbsp;|&nbsp; n = 복리 주기/년 &nbsp;|&nbsp; t = 기간(년)</div>
         </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <span>연도별 상세 내역</span>
+                <button class="toggle-btn" id="tableToggle" onclick="toggleTable()">펼치기 ▼</button>
+            </div>
+            <div class="table-wrapper" id="tableWrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>연도</th>
+                            <th>복리 금액</th>
+                            <th>단리 금액</th>
+                            <th>누적 이자</th>
+                            <th>복리 − 단리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('chart');
-        const ctx = canvas.getContext('2d');
+<script>
+    const canvas = document.getElementById('chart');
+    const ctx    = canvas.getContext('2d');
 
-        const inputs = {
-            principal: document.getElementById('principal'),
-            rate: document.getElementById('rate'),
-            years: document.getElementById('years'),
-            frequency: document.getElementById('frequency'),
-        };
+    const sliders = {
+        principal: document.getElementById('principal'),
+        rate:      document.getElementById('rate'),
+        years:     document.getElementById('years'),
+        frequency: document.getElementById('frequency'),
+    };
 
-        function getFreqLabel(n) {
-            if (n === 1) return '연복리 (1회/년)';
-            if (n === 2) return '반기복리 (2회/년)';
-            if (n === 4) return '분기복리 (4회/년)';
-            if (n === 12) return '월복리 (12회/년)';
-            if (n === 365) return '일복리 (365회/년)';
-            return `${n}회/년`;
+    function freqLabel(n) {
+        const m = {1:'연복리 (1회/년)',2:'반기복리 (2회/년)',4:'분기복리 (4회/년)',
+                   12:'월복리 (12회/년)',52:'주복리 (52회/년)',365:'일복리 (365회/년)'};
+        return m[n] || `${n}회/년`;
+    }
+
+    function fmt(v) {
+        if (v >= 1000000) return (v/100000000).toFixed(2)+'억원';
+        if (v >= 10000)   return (v/10000).toFixed(1).replace(/\.0$/,'')+'억원';
+        return v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+'만원';
+    }
+
+    function calculate() {
+        const P = parseFloat(sliders.principal.value);
+        const r = parseFloat(sliders.rate.value) / 100;
+        const t = parseInt(sliders.years.value);
+        const n = parseInt(sliders.frequency.value);
+
+        document.getElementById('principalDisplay').textContent = fmt(P);
+        document.getElementById('rateDisplay').textContent      = sliders.rate.value + '%';
+        document.getElementById('yearsDisplay').textContent     = t + '년';
+        document.getElementById('freqDisplay').textContent      = freqLabel(n);
+
+        const doublingYears = (72 / (r * 100)).toFixed(1);
+        document.getElementById('rule72Value').textContent = `약 ${doublingYears}년`;
+
+        const compound = [], simple = [];
+        for (let y = 0; y <= t; y++) {
+            compound.push(P * Math.pow(1 + r / n, n * y));
+            simple.push(P * (1 + r * y));
         }
 
-        function formatKRW(val) {
-            if (val >= 10000) return (val / 10000).toFixed(1).replace(/\.0$/, '') + '억원';
-            return val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '만원';
+        const finalC   = compound[t];
+        const finalS   = simple[t];
+        const interest = finalC - P;
+        const extra    = finalC - finalS;
+
+        document.getElementById('totalAmount').textContent    = fmt(finalC);
+        document.getElementById('totalSub').textContent       = `수익률 ${((finalC/P-1)*100).toFixed(1)}%`;
+        document.getElementById('interestAmount').textContent = fmt(interest);
+        document.getElementById('interestSub').textContent    = `원금의 ${(interest/P*100).toFixed(1)}%`;
+        document.getElementById('extraGain').textContent      = '+' + fmt(extra);
+        document.getElementById('extraSub').textContent       = `단리보다 ${(extra/finalS*100).toFixed(1)}% 더`;
+
+        buildMilestones(compound, P, t);
+        buildTable(compound, simple, P, t);
+        drawChart(compound, simple, P, t, r);
+    }
+
+    function buildMilestones(compound, P, t) {
+        const list = document.getElementById('milestoneList');
+        list.innerHTML = '';
+        [2, 3, 5, 10].forEach(x => {
+            const yr = compound.findIndex(v => v >= P * x);
+            const chip = document.createElement('div');
+            chip.className = 'milestone-chip';
+            chip.innerHTML = yr < 0
+                ? `<span>${x}배</span>: ${t}년 이후`
+                : `<span>${x}배</span>: ${yr}년째`;
+            list.appendChild(chip);
+        });
+    }
+
+    function buildTable(compound, simple, P, t) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        for (let y = 0; y <= t; y++) {
+            const c  = compound[y], s = simple[y];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${y}년</td>
+                <td class="td-compound">${fmt(c)}</td>
+                <td class="td-simple">${fmt(s)}</td>
+                <td>${y===0 ? '—' : fmt(c - P)}</td>
+                <td class="td-diff">${y===0 ? '—' : '+' + fmt(c - s)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    function toggleTable() {
+        const wrap = document.getElementById('tableWrapper');
+        const btn  = document.getElementById('tableToggle');
+        const open = wrap.classList.toggle('open');
+        btn.textContent = open ? '접기 ▲' : '펼치기 ▼';
+    }
+
+    function drawChart(compound, simple, P, t, r) {
+        const dpr  = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width  = rect.width  * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        const W = rect.width, H = rect.height;
+        const pad = { top: 24, right: 28, bottom: 44, left: 80 };
+        const cw = W - pad.left - pad.right;
+        const ch = H - pad.top  - pad.bottom;
+        const maxVal = Math.max(...compound) * 1.08;
+
+        ctx.clearRect(0, 0, W, H);
+
+        function xp(i) { return pad.left + (i / t) * cw; }
+        function yp(v) { return pad.top  + ch - (v / maxVal) * ch; }
+
+        /* Grid lines */
+        for (let i = 0; i <= 5; i++) {
+            const v = (maxVal / 5) * i;
+            const y = yp(v);
+            ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+            ctx.fillStyle = '#475569'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+            ctx.fillText(fmt(v), pad.left - 6, y + 4);
         }
 
-        function calculate() {
-            const P = parseFloat(inputs.principal.value);
-            const r = parseFloat(inputs.rate.value) / 100;
-            const t = parseInt(inputs.years.value);
-            const n = parseInt(inputs.frequency.value);
+        /* X labels */
+        ctx.textAlign = 'center'; ctx.fillStyle = '#475569'; ctx.font = '11px sans-serif';
+        const step = t <= 10 ? 1 : t <= 25 ? 5 : 10;
+        for (let i = 0; i <= t; i += step) ctx.fillText(i + '년', xp(i), H - pad.bottom + 22);
 
-            document.getElementById('principalDisplay').textContent = formatKRW(P);
-            document.getElementById('rateDisplay').textContent = inputs.rate.value + '%';
-            document.getElementById('yearsDisplay').textContent = t + '년';
-            document.getElementById('freqDisplay').textContent = getFreqLabel(n);
+        /* Principal band */
+        ctx.beginPath();
+        ctx.moveTo(xp(0), yp(P));
+        for (let i = 1; i <= t; i++) ctx.lineTo(xp(i), yp(P));
+        ctx.lineTo(xp(t), yp(0)); ctx.lineTo(xp(0), yp(0)); ctx.closePath();
+        ctx.fillStyle = 'rgba(129,140,248,0.10)'; ctx.fill();
 
-            const compoundData = [];
-            const simpleData = [];
+        /* Compound fill */
+        ctx.beginPath();
+        ctx.moveTo(xp(0), yp(compound[0]));
+        for (let i = 1; i <= t; i++) ctx.lineTo(xp(i), yp(compound[i]));
+        ctx.lineTo(xp(t), yp(0)); ctx.lineTo(xp(0), yp(0)); ctx.closePath();
+        const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+        grad.addColorStop(0, 'rgba(56,189,248,0.28)');
+        grad.addColorStop(1, 'rgba(56,189,248,0.02)');
+        ctx.fillStyle = grad; ctx.fill();
 
-            for (let year = 0; year <= t; year++) {
-                const compound = P * Math.pow(1 + r / n, n * year);
-                const simple = P * (1 + r * year);
-                compoundData.push(compound);
-                simpleData.push(simple);
-            }
+        /* Simple line */
+        ctx.beginPath(); ctx.strokeStyle = '#f87171bb'; ctx.lineWidth = 2.5;
+        ctx.setLineDash([7,5]);
+        for (let i = 0; i <= t; i++) i===0 ? ctx.moveTo(xp(i),yp(simple[i])) : ctx.lineTo(xp(i),yp(simple[i]));
+        ctx.stroke(); ctx.setLineDash([]);
 
-            const finalCompound = compoundData[t];
-            const finalSimple = simpleData[t];
-            const interest = finalCompound - P;
-            const extraGain = finalCompound - finalSimple;
+        /* Compound line */
+        ctx.beginPath(); ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+        for (let i = 0; i <= t; i++) i===0 ? ctx.moveTo(xp(i),yp(compound[i])) : ctx.lineTo(xp(i),yp(compound[i]));
+        ctx.stroke();
 
-            document.getElementById('totalAmount').textContent = formatKRW(finalCompound);
-            document.getElementById('interestAmount').textContent = formatKRW(interest);
-            document.getElementById('extraGain').textContent = '+' + formatKRW(extraGain);
+        /* Principal line */
+        ctx.beginPath(); ctx.strokeStyle = '#818cf866'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,4]); ctx.moveTo(xp(0),yp(P)); ctx.lineTo(xp(t),yp(P));
+        ctx.stroke(); ctx.setLineDash([]);
 
-            drawChart(compoundData, simpleData, t);
-        }
-
-        function drawChart(compoundData, simpleData, years) {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            const W = rect.width;
-            const H = rect.height;
-
-            ctx.clearRect(0, 0, W, H);
-
-            const pad = { top: 20, right: 20, bottom: 40, left: 70 };
-            const cw = W - pad.left - pad.right;
-            const ch = H - pad.top - pad.bottom;
-
-            const maxVal = Math.max(...compoundData) * 1.1;
-
-            function xPos(i) { return pad.left + (i / years) * cw; }
-            function yPos(v) { return pad.top + ch - (v / maxVal) * ch; }
-
-            // Grid lines
-            ctx.strokeStyle = '#334155';
-            ctx.lineWidth = 0.5;
-            const gridLines = 5;
-            for (let i = 0; i <= gridLines; i++) {
-                const v = (maxVal / gridLines) * i;
-                const y = yPos(v);
-                ctx.beginPath();
-                ctx.moveTo(pad.left, y);
-                ctx.lineTo(W - pad.right, y);
-                ctx.stroke();
-
-                ctx.fillStyle = '#64748b';
-                ctx.font = '11px sans-serif';
-                ctx.textAlign = 'right';
-                ctx.fillText(formatKRW(v), pad.left - 8, y + 4);
-            }
-
-            // X axis labels
-            ctx.textAlign = 'center';
-            ctx.fillStyle = '#64748b';
-            const step = years <= 10 ? 1 : years <= 25 ? 5 : 10;
-            for (let i = 0; i <= years; i += step) {
-                ctx.fillText(i + '년', xPos(i), H - pad.bottom + 25);
-            }
-
-            // Compound fill area
-            ctx.beginPath();
-            ctx.moveTo(xPos(0), yPos(compoundData[0]));
-            for (let i = 1; i <= years; i++) ctx.lineTo(xPos(i), yPos(compoundData[i]));
-            ctx.lineTo(xPos(years), yPos(0));
-            ctx.lineTo(xPos(0), yPos(0));
-            ctx.closePath();
-            const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
-            grad.addColorStop(0, 'rgba(56,189,248,0.2)');
-            grad.addColorStop(1, 'rgba(56,189,248,0.02)');
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            // Simple interest line
-            ctx.beginPath();
-            ctx.strokeStyle = '#f87171';
-            ctx.lineWidth = 2.5;
-            ctx.setLineDash([6, 4]);
-            ctx.moveTo(xPos(0), yPos(simpleData[0]));
-            for (let i = 1; i <= years; i++) ctx.lineTo(xPos(i), yPos(simpleData[i]));
-            ctx.stroke();
+        /* Doubling annotation */
+        const doubY = compound.findIndex(v => v >= P * 2);
+        if (doubY > 0 && doubY <= t) {
+            ctx.save();
+            ctx.setLineDash([3,3]); ctx.strokeStyle = '#fbbf2466'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(xp(doubY), yp(P*2)); ctx.lineTo(xp(doubY), pad.top+ch); ctx.stroke();
             ctx.setLineDash([]);
-
-            // Compound interest line
-            ctx.beginPath();
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 3;
-            ctx.moveTo(xPos(0), yPos(compoundData[0]));
-            for (let i = 1; i <= years; i++) ctx.lineTo(xPos(i), yPos(compoundData[i]));
-            ctx.stroke();
-
-            // End dots
-            ctx.beginPath();
-            ctx.arc(xPos(years), yPos(compoundData[years]), 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#38bdf8';
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(xPos(years), yPos(simpleData[years]), 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#f87171';
-            ctx.fill();
-
-            // End labels
-            ctx.font = 'bold 12px sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillText(formatKRW(compoundData[years]), xPos(years) - 10, yPos(compoundData[years]) - 10);
-            ctx.fillStyle = '#f87171';
-            ctx.fillText(formatKRW(simpleData[years]), xPos(years) - 10, yPos(simpleData[years]) + 20);
+            ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(`${doubY}년(2배)`, xp(doubY), H - pad.bottom + 36);
+            ctx.restore();
         }
 
-        Object.values(inputs).forEach(input => input.addEventListener('input', calculate));
-        window.addEventListener('resize', calculate);
-        calculate();
-    </script>
+        /* End dots */
+        [[compound[t],'#38bdf8'],[simple[t],'#f87171']].forEach(([v,c]) => {
+            ctx.beginPath(); ctx.arc(xp(t), yp(v), 6, 0, Math.PI*2);
+            ctx.fillStyle = c; ctx.fill();
+            ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2; ctx.stroke();
+        });
+
+        /* End labels */
+        const cy = yp(compound[t]), sy = yp(simple[t]);
+        ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillStyle = '#38bdf8'; ctx.fillText(fmt(compound[t]), xp(t)-12, cy-10);
+        ctx.fillStyle = '#f87171';
+        ctx.fillText(fmt(simple[t]), xp(t)-12, Math.abs(cy-sy)<30 ? sy+22 : sy+16);
+    }
+
+    Object.values(sliders).forEach(s => s.addEventListener('input', calculate));
+    window.addEventListener('resize', calculate);
+    calculate();
+</script>
 </body>
 </html>
