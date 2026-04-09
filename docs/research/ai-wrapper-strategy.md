@@ -1,3 +1,15 @@
+---
+title: "AI 래퍼의 미래: 모델 진화 시대에 래퍼 제품이 살아남는 조건"
+date: 2026-03-01
+category: strategy
+tags: [ai-wrapper, strategy, llm, startup, insight]
+status: active
+summary: "Opus 5급 모델 등장 시 대부분의 AI 래퍼는 '굳이?'가 됨 — 살아남으려면 모델이 못 하는 영역을 가져야 함"
+related:
+  - docs/research/바이브코딩_도구_총정리_2026.md
+  - docs/research/DeerFlow_분석_바이트댄스_AI에이전트.md
+---
+
 # AI 래퍼의 미래: 모델 진화 시대의 전략적 관점
 
 > 소신발언 — 2026년 3월
