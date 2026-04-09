@@ -122,15 +122,30 @@ AI 관련 뉴스를 수집/요약합니다.
 
 ---
 
-## 문서 카테고리 (`docs/`)
+## 지식 DB (`docs/`)
+
+이 레포의 `docs/`는 단순 문서 저장소가 아닌 **점진적 실무 지식 DB**입니다.
+
+### 빠른 탐색
+
+→ **[KNOWLEDGE_INDEX.md](docs/KNOWLEDGE_INDEX.md)** — 카테고리·태그별 전체 문서 인덱스 (자동 생성)
+
+### 카테고리
 
 | 카테고리 | 경로 | 설명 |
 |----------|------|------|
 | Claude Code | `docs/claude-code/` | Claude Code 기능, 플러그인, MCP 연동, UX 비교 등 |
 | Claude Cowork | `docs/claude-cowork/` | 윈도우 배포, 특허업무 프롬프트, VM 트러블슈팅 |
 | Claude Desktop | `docs/claude-desktop/` | 크래시 해결, 장애 보고서, 복구 스크립트 |
-| 리서치 | `docs/research/` | AI/ML, 게임(WoW), 금융, 지정학 분석 |
-| 개인 | `docs/personal/` | 개인 메모 및 건강 관리 |
+| 리서치 | `docs/research/` | AI/ML, 전략, 금융 분석 |
+| 개인 | `docs/personal/` | 개인 메모 |
+
+### 새 지식 문서 추가하기
+
+1. 목적에 맞는 템플릿 복사: `docs/_templates/` (guide / analysis / troubleshoot / insight)
+2. YAML frontmatter 작성: `docs/_meta/STANDARDS.md` 참고
+3. `docs/<카테고리>/` 에 저장
+4. 인덱스는 `master` 푸시 시 자동 갱신 (또는 `python scripts/build_knowledge_index.py` 수동 실행)
 
 ---
 

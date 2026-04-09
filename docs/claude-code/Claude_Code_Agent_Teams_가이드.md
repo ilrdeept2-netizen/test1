@@ -1,3 +1,15 @@
+---
+title: "Claude Code Agent Teams 가이드: 병렬 다중 에이전트 실행"
+date: 2026-04-01
+category: claude-code
+tags: [claude-code, multi-agent, agent, parallel, workflow]
+status: active
+summary: "리드 에이전트가 팀원 에이전트를 생성해 병렬로 작업하는 Claude Code 실험적 기능 사용법"
+related:
+  - docs/claude-code/Claude_Code_아키텍처_분석.md
+  - docs/claude-code/Claude_Code_예약작업_Scheduled_Tasks_가이드.md
+---
+
 # Claude Code Agent Teams (에이전트 팀) 가이드
 
 ## 에이전트 팀이란?
