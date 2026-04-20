@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국특허서식 변환기 - HLT Converter</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #e74c3c;
+            --primary-hover: #c0392b;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --background-color: #f8f9fa;
+            --text-color: #2c3e50;
+            --border-color: #ddd;
+            --shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .title-section h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .title-section p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        /* Upload Area */
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .upload-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .upload-zone {
+            border: 3px dashed var(--border-color);
+            border-radius: 15px;
+            padding: 60px 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary-color);
+            background: #fff5f5;
+        }
+
+        .upload-zone.dragover {
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .upload-zone h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .upload-zone p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .btn-select {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-select:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        .file-types {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .file-type-badge {
+            background: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .file-type-badge i {
+            color: var(--primary-color);
+        }
+
+        /* File List */
+        .file-list {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .file-list.active {
+            display: block;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .file-details h4 {
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        .file-details span {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .file-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+            padding: 5px 10px;
+        }
+
+        .file-actions button:hover {
+            color: var(--primary-color);
+        }
+
+        /* Convert Button */
+        .convert-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .convert-section.active {
+            display: block;
+        }
+
+        .btn-convert {
+            width: 100%;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 1.3rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-weight: bold;
+        }
+
+        .btn-convert:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-convert:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* Result Section */
+        .result-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .result-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .result-card p {
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .btn-download {
+            background: white;
+            color: #27ae60;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .btn-download:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-new {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn-new:hover {
+            background: white;
+            color: #27ae60;
+        }
+
+        /* Features Section */
+        .features-section {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .feature-card h4 {
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 60px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #e74c3c;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .title-section h1 {
+                font-size: 2rem;
+            }
+
+            .upload-card {
+                padding: 40px 20px;
+            }
+
+            .upload-zone {
+                padding: 40px 20px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-file-code"></i>
+            <span>특허변환기</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#"><i class="fas fa-home"></i> 홈</a>
+            <a href="#features"><i class="fas fa-info-circle"></i> 기능</a>
+            <a href="#"><i class="fas fa-question-circle"></i> 도움말</a>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1><i class="fas fa-exchange-alt"></i> 한국특허서식 변환기</h1>
+            <p>HWP, Word, PDF 파일을 한국특허청 HLT 형식으로 간편하게 변환하세요</p>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="upload-card">
+            <!-- Upload Zone -->
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>파일을 여기에 드래그하거나</h3>
+                <p>클릭하여 파일을 선택하세요</p>
+                <button class="btn-select" id="btnSelect">
+                    <i class="fas fa-folder-open"></i> 파일 선택
+                </button>
+                <input type="file" id="fileInput" hidden accept=".hwp,.docx,.doc,.pdf">
+
+                <div class="file-types">
+                    <span class="file-type-badge"><i class="fas fa-file-word"></i> DOCX</span>
+                    <span class="file-type-badge"><i class="fas fa-file-alt"></i> HWP</span>
+                    <span class="file-type-badge"><i class="fas fa-file-pdf"></i> PDF</span>
+                    <span class="file-type-badge"><i class="fas fa-arrow-right"></i></span>
+                    <span class="file-type-badge"><i class="fas fa-file-code"></i> HLT</span>
+                </div>
+            </div>
+
+            <!-- File List -->
+            <div class="file-list" id="fileList">
+                <!-- Files will be added here dynamically -->
+            </div>
+
+            <!-- Convert Button -->
+            <div class="convert-section" id="convertSection">
+                <button class="btn-convert" id="btnConvert">
+                    <i class="fas fa-magic"></i> HLT로 변환하기
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p class="progress-text" id="progressText">파일 변환 중...</p>
+            </div>
+
+            <!-- Result Section -->
+            <div class="result-section" id="resultSection">
+                <div class="result-card">
+                    <div class="result-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>변환 완료!</h3>
+                    <p id="resultMessage">파일이 성공적으로 HLT 형식으로 변환되었습니다.</p>
+                    <button class="btn-download" id="btnDownload">
+                        <i class="fas fa-download"></i> HLT 파일 다운로드
+                    </button>
+                    <br>
+                    <button class="btn-new" id="btnNewConversion">
+                        <i class="fas fa-plus"></i> 새 파일 변환
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <section class="features-section" id="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h4>빠른 변환</h4>
+                <p>몇 초 안에 특허 문서를 HLT 형식으로 변환합니다</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h4>안전한 처리</h4>
+                <p>업로드된 파일은 변환 후 즉시 삭제됩니다</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <h4>정확한 구조</h4>
+                <p>특허청 표준 섹션 구조를 자동으로 인식합니다</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <h4>K-Editor 호환</h4>
+                <p>생성된 HLT 파일은 K-Editor에서 바로 사용 가능합니다</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 한국특허서식 변환기. 특허 문서 작업을 더 쉽게.</p>
+    </footer>
+
+    <!-- Error Toast -->
+    <div class="toast" id="errorToast">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="errorMessage">오류가 발생했습니다.</span>
+    </div>
+
+    <script>
+        // DOM Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnSelect = document.getElementById('btnSelect');
+        const fileList = document.getElementById('fileList');
+        const convertSection = document.getElementById('convertSection');
+        const btnConvert = document.getElementById('btnConvert');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const resultSection = document.getElementById('resultSection');
+        const resultMessage = document.getElementById('resultMessage');
+        const btnDownload = document.getElementById('btnDownload');
+        const btnNewConversion = document.getElementById('btnNewConversion');
+        const errorToast = document.getElementById('errorToast');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let selectedFile = null;
+        let downloadUrl = null;
+        let downloadFilename = null;
+
+        // File type icons
+        const fileIcons = {
+            '.docx': 'fa-file-word',
+            '.doc': 'fa-file-word',
+            '.hwp': 'fa-file-alt',
+            '.pdf': 'fa-file-pdf'
+        };
+
+        // Event Listeners
+        btnSelect.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target === uploadZone || e.target.closest('.upload-icon') ||
+                e.target.tagName === 'H3' || e.target.tagName === 'P') {
+                fileInput.click();
+            }
+        });
+
+        // Drag and Drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        btnConvert.addEventListener('click', convertFile);
+        btnDownload.addEventListener('click', downloadFile);
+        btnNewConversion.addEventListener('click', resetUI);
+
+        // Handle file selection
+        function handleFile(file) {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            const validExtensions = ['.hwp', '.docx', '.doc', '.pdf'];
+
+            if (!validExtensions.includes(ext)) {
+                showError('지원하지 않는 파일 형식입니다. HWP, DOCX, DOC, PDF 파일만 가능합니다.');
+                return;
+            }
+
+            selectedFile = file;
+            updateFileList(file);
+            convertSection.classList.add('active');
+        }
+
+        // Update file list display
+        function updateFileList(file) {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            const iconClass = fileIcons[ext] || 'fa-file';
+            const fileSize = formatFileSize(file.size);
+
+            fileList.innerHTML = `
+                <div class="file-item">
+                    <div class="file-info">
+                        <i class="fas ${iconClass} file-icon"></i>
+                        <div class="file-details">
+                            <h4>${file.name}</h4>
+                            <span>${fileSize}</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button onclick="removeFile()" title="삭제">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            fileList.classList.add('active');
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Remove file
+        function removeFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileList.classList.remove('active');
+            fileList.innerHTML = '';
+            convertSection.classList.remove('active');
+        }
+
+        // Convert file
+        async function convertFile() {
+            if (!selectedFile) {
+                showError('파일을 먼저 선택해주세요.');
+                return;
+            }
+
+            // Show progress
+            convertSection.classList.remove('active');
+            progressSection.classList.add('active');
+            btnConvert.disabled = true;
+
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+            }, 200);
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                progressText.textContent = '파일 업로드 중...';
+
+                const response = await fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressText.textContent = '변환 완료!';
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '변환 중 오류가 발생했습니다.');
+                }
+
+                const result = await response.json();
+                downloadUrl = result.download_url;
+                downloadFilename = result.filename;
+
+                // Show success
+                setTimeout(() => {
+                    progressSection.classList.remove('active');
+                    resultSection.classList.add('active');
+                    resultMessage.textContent = `${selectedFile.name} 파일이 성공적으로 HLT 형식으로 변환되었습니다.`;
+                }, 500);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                showError(error.message);
+                resetProgress();
+            }
+        }
+
+        // Download converted file
+        function downloadFile() {
+            if (downloadUrl) {
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = downloadFilename || 'converted.hlt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        // Reset UI for new conversion
+        function resetUI() {
+            selectedFile = null;
+            downloadUrl = null;
+            downloadFilename = null;
+            fileInput.value = '';
+            fileList.classList.remove('active');
+            fileList.innerHTML = '';
+            convertSection.classList.remove('active');
+            resultSection.classList.remove('active');
+            resetProgress();
+        }
+
+        // Reset progress section
+        function resetProgress() {
+            progressSection.classList.remove('active');
+            progressBar.style.width = '0%';
+            progressText.textContent = '파일 변환 중...';
+            btnConvert.disabled = false;
+            convertSection.classList.add('active');
+        }
+
+        // Show error toast
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorToast.classList.add('show');
+            setTimeout(() => {
+                errorToast.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: korean-patent-converter
+    runtime: python
+    branch: claude/korean-patent-converter-ecq8V
+    buildCommand: pip install -r requirements_web.txt
+    startCommand: gunicorn korean_patent_converter_web:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+    plan: free
