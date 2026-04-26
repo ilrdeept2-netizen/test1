@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Artifact Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+    h1 {
+      font-size: 1.6rem;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .meta { color: #94a3b8; font-size: 0.85rem; }
+    .meta .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; vertical-align: middle; }
+    .meta .dot.stale { background: #f59e0b; }
+    .meta .dot.error { background: #ef4444; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.25rem; }
+    .card .label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .value { font-size: 1.8rem; font-weight: 600; margin-top: 0.5rem; }
+    .card .delta { margin-top: 0.25rem; font-size: 0.85rem; color: #38bdf8; }
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+    th { background: #0f172a; color: #94a3b8; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    .empty { padding: 2rem; text-align: center; color: #64748b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="title">Live Artifact</h1>
+    <div class="meta">
+      <span id="status"><span class="dot"></span>connecting…</span>
+      &nbsp;·&nbsp;
+      <span id="updated">—</span>
+    </div>
+  </header>
+
+  <section class="grid" id="kpis"></section>
+
+  <table>
+    <thead>
+      <tr><th>Source</th><th>Item</th><th>Value</th><th>Time</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="4" class="empty">No rows yet. Run /refresh-artifact.</td></tr></tbody>
+  </table>
+
+  <script>
+    const POLL_MS = 3000;
+    const DATA_URL = './data.json';
+
+    let lastEtag = null;
+
+    function setStatus(state, text) {
+      const el = document.getElementById('status');
+      const cls = state === 'ok' ? '' : state === 'stale' ? 'stale' : 'error';
+      el.innerHTML = `<span class="dot ${cls}"></span>${text}`;
+    }
+
+    function renderKpis(kpis) {
+      const root = document.getElementById('kpis');
+      root.innerHTML = (kpis || []).map(k => `
+        <div class="card">
+          <div class="label">${k.label ?? ''}</div>
+          <div class="value">${k.value ?? ''}</div>
+          <div class="delta">${k.delta ?? ''}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderRows(rows) {
+      const tbody = document.getElementById('rows');
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No rows yet. Run /refresh-artifact.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.source ?? ''}</td>
+          <td>${r.item ?? ''}</td>
+          <td>${r.value ?? ''}</td>
+          <td>${r.time ?? ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const etag = res.headers.get('etag') || res.headers.get('last-modified');
+        if (etag && etag === lastEtag) {
+          setStatus('ok', 'live');
+          return;
+        }
+        lastEtag = etag;
+        const data = await res.json();
+        document.getElementById('title').textContent = data.title || 'Live Artifact';
+        document.getElementById('updated').textContent = `updated ${data.updated_at ?? '—'}`;
+        renderKpis(data.kpis);
+        renderRows(data.rows);
+        setStatus('ok', 'live');
+      } catch (err) {
+        setStatus('error', `error: ${err.message}`);
+      }
+    }
+
+    poll();
+    setInterval(poll, POLL_MS);
+  </script>
+</body>
+</html>
