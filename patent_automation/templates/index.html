@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>특허 업무 자동화 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--primary-color) !important;
+        }
+
+        .sidebar {
+            background-color: var(--card-bg);
+            min-height: calc(100vh - 56px);
+            border-right: 1px solid #dee2e6;
+        }
+
+        .sidebar .nav-link {
+            color: var(--primary-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 4px 8px;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: #e9ecef;
+        }
+
+        .sidebar .nav-link.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .output-area {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'D2Coding', 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .prompt-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .prompt-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .workflow-step {
+            padding: 15px;
+            border-left: 3px solid #dee2e6;
+            margin-bottom: 10px;
+        }
+
+        .workflow-step.completed {
+            border-left-color: #28a745;
+        }
+
+        .workflow-step.in-progress {
+            border-left-color: var(--secondary-color);
+        }
+
+        .workflow-step.pending {
+            border-left-color: #6c757d;
+        }
+
+        .loading-spinner {
+            display: none;
+        }
+
+        .loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .tab-content {
+            padding-top: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .api-key-input {
+            font-family: monospace;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1050;
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-file-earmark-text"></i>
+                특허 업무 자동화 시스템
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3" id="projectIdDisplay">프로젝트: -</span>
+                <button class="btn btn-outline-light btn-sm" onclick="createNewProject()">
+                    <i class="bi bi-plus-circle"></i> 새 프로젝트
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 사이드바 -->
+            <div class="col-md-2 sidebar p-0">
+                <nav class="nav flex-column py-3">
+                    <a class="nav-link active" href="#" data-section="dashboard">
+                        <i class="bi bi-speedometer2"></i> 대시보드
+                    </a>
+                    <a class="nav-link" href="#" data-section="specification">
+                        <i class="bi bi-file-text"></i> 명세서 작성
+                    </a>
+                    <a class="nav-link" href="#" data-section="drawing">
+                        <i class="bi bi-image"></i> 도면 관리
+                    </a>
+                    <a class="nav-link" href="#" data-section="claims">
+                        <i class="bi bi-list-check"></i> 청구항 작성
+                    </a>
+                    <a class="nav-link" href="#" data-section="oa">
+                        <i class="bi bi-envelope-paper"></i> OA 대응
+                    </a>
+                    <a class="nav-link" href="#" data-section="workflow">
+                        <i class="bi bi-diagram-3"></i> 자동 워크플로우
+                    </a>
+                    <hr class="mx-3">
+                    <a class="nav-link" href="#" data-section="prompts">
+                        <i class="bi bi-chat-square-text"></i> 프롬프트 관리
+                    </a>
+                    <a class="nav-link" href="#" data-section="settings">
+                        <i class="bi bi-gear"></i> AI 설정
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 메인 콘텐츠 -->
+            <div class="col-md-10 main-content">
+                <!-- 대시보드 섹션 -->
+                <div id="section-dashboard" class="content-section">
+                    <h4 class="mb-4"><i class="bi bi-speedometer2"></i> 대시보드</h4>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-primary"><i class="bi bi-file-text"></i></h1>
+                                    <h5>명세서 작성</h5>
+                                    <p class="text-muted small">기술분야, 배경기술, 효과 등</p>
+                                    <button class="btn btn-primary btn-sm" onclick="showSection('specification')">시작하기</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-success"><i class="bi bi-image"></i></h1>
+                                    <h5>도면 관리</h5>
+                                    <p class="text-muted small">도면 계획, 부호체계</p>
+                                    <button class="btn btn-success btn-sm" onclick="showSection('drawing')">시작하기</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-warning"><i class="bi bi-list-check"></i></h1>
+                                    <h5>청구항 작성</h5>
+                                    <p class="text-muted small">독립항, 종속항 작성</p>
+                                    <button class="btn btn-warning btn-sm" onclick="showSection('claims')">시작하기</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-danger"><i class="bi bi-envelope-paper"></i></h1>
+                                    <h5>OA 대응</h5>
+                                    <p class="text-muted small">거절이유 분석, 의견서</p>
+                                    <button class="btn btn-danger btn-sm" onclick="showSection('oa')">시작하기</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="bi bi-lightning-charge"></i> 빠른 시작 - 자동 워크플로우
+                        </div>
+                        <div class="card-body">
+                            <p>발명 정보만 입력하면 명세서 전체를 자동으로 작성합니다.</p>
+                            <button class="btn btn-primary" onclick="showSection('workflow')">
+                                <i class="bi bi-play-circle"></i> 자동 워크플로우 시작
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 명세서 작성 섹션 -->
+                <div id="section-specification" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-file-text"></i> 명세서 작성</h4>
+
+                    <ul class="nav nav-tabs" id="specTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#spec-context">발명 정보</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#spec-sections">섹션별 작성</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#spec-output">결과 보기</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="spec-context">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">발명의 명칭</label>
+                                        <input type="text" class="form-control" id="inventionTitle" placeholder="예: 인공지능 기반 특허 명세서 자동 작성 시스템">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">발명 내용 (기술 설명, 특징 등)</label>
+                                        <textarea class="form-control" id="inventionContext" rows="10" placeholder="발명의 기술적 내용, 구성요소, 동작 원리, 효과 등을 상세히 기술해주세요..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">발명자 초안 (선택)</label>
+                                        <textarea class="form-control" id="inventorDraft" rows="5" placeholder="발명자가 작성한 초안이 있다면 입력해주세요..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="spec-sections">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">작성할 섹션 선택</h6>
+                                            <div class="list-group">
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('TECHNICAL_FIELD')">
+                                                    <i class="bi bi-chevron-right"></i> 기술분야
+                                                </button>
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('BACKGROUND')">
+                                                    <i class="bi bi-chevron-right"></i> 발명의 배경이 되는 기술
+                                                </button>
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('PROBLEM')">
+                                                    <i class="bi bi-chevron-right"></i> 해결하고자 하는 과제
+                                                </button>
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('EFFECT')">
+                                                    <i class="bi bi-chevron-right"></i> 발명의 효과
+                                                </button>
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('DRAWING_DESCRIPTION')">
+                                                    <i class="bi bi-chevron-right"></i> 도면의 간단한 설명
+                                                </button>
+                                                <button class="list-group-item list-group-item-action" onclick="writeSection('DETAILED_DESCRIPTION')">
+                                                    <i class="bi bi-chevron-right"></i> 발명을 실시하기 위한 구체적인 내용
+                                                </button>
+                                            </div>
+                                            <hr>
+                                            <button class="btn btn-primary w-100" onclick="writeAllSections()">
+                                                <i class="bi bi-magic"></i> 전체 섹션 자동 작성
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">
+                                                작성 결과
+                                                <span class="loading-spinner spinner-border spinner-border-sm ms-2"></span>
+                                            </h6>
+                                            <div id="sectionOutput" class="output-area">
+                                                섹션을 선택하면 AI가 작성한 내용이 여기에 표시됩니다.
+                                            </div>
+                                            <button class="btn btn-outline-secondary btn-sm mt-2" onclick="copyToClipboard('sectionOutput')">
+                                                <i class="bi bi-clipboard"></i> 복사
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="spec-output">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="section-title mb-0">전체 명세서</h6>
+                                        <div>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="exportSpecification('text')">
+                                                <i class="bi bi-file-text"></i> 텍스트 내보내기
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" onclick="exportSpecification('json')">
+                                                <i class="bi bi-filetype-json"></i> JSON 내보내기
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="fullSpecOutput" class="output-area" style="min-height: 400px;">
+                                        명세서 작성 후 전체 내용이 여기에 표시됩니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 도면 관리 섹션 -->
+                <div id="section-drawing" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-image"></i> 도면 관리</h4>
+
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#drawing-plan">도면 계획</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#drawing-generate">도면 생성</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#drawing-symbols">부호체계</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="drawing-plan">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">발명 내용</label>
+                                        <textarea class="form-control" id="drawingContext" rows="5" placeholder="도면 계획을 위한 발명 내용을 입력하세요..."></textarea>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="planDrawings()">
+                                        <i class="bi bi-diagram-3"></i> 도면 계획 수립
+                                        <span class="loading-spinner spinner-border spinner-border-sm ms-2"></span>
+                                    </button>
+                                    <hr>
+                                    <div id="drawingPlanOutput" class="output-area">
+                                        도면 계획이 여기에 표시됩니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="drawing-generate">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">도면 정보</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">도면 번호</label>
+                                                <input type="number" class="form-control" id="drawingNumber" value="1" min="1">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">도면 제목</label>
+                                                <input type="text" class="form-control" id="drawingTitle" placeholder="예: 시스템 전체 구성도">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">도면 설명</label>
+                                                <textarea class="form-control" id="drawingDescription" rows="3"></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">도면 타입</label>
+                                                <select class="form-select" id="drawingType">
+                                                    <option value="block">블록도</option>
+                                                    <option value="flow">흐름도</option>
+                                                    <option value="structure">구조도</option>
+                                                </select>
+                                            </div>
+                                            <button class="btn btn-primary w-100" onclick="generateDrawing()">
+                                                <i class="bi bi-image"></i> HTML 도면 생성
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">생성된 도면</h6>
+                                            <div id="drawingPreview" style="border: 1px solid #dee2e6; min-height: 400px; background: #fff;">
+                                            </div>
+                                            <div class="mt-2">
+                                                <button class="btn btn-outline-secondary btn-sm" onclick="showDrawingCode()">
+                                                    <i class="bi bi-code-slash"></i> HTML 코드 보기
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="drawing-symbols">
+                            <div class="card">
+                                <div class="card-body">
+                                    <button class="btn btn-primary mb-3" onclick="generateSymbolSystem()">
+                                        <i class="bi bi-list-ol"></i> 부호체계 자동 생성
+                                    </button>
+                                    <div id="symbolSystemOutput" class="output-area">
+                                        부호체계가 여기에 표시됩니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 청구항 작성 섹션 -->
+                <div id="section-claims" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-list-check"></i> 청구항 작성</h4>
+
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">명세서 내용</label>
+                                        <textarea class="form-control" id="claimsSpecification" rows="10" placeholder="청구항 작성을 위한 명세서 내용을 입력하세요..."></textarea>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="writeClaims()">
+                                            <i class="bi bi-magic"></i> 전체 청구항 자동 작성
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="reviewClaims()">
+                                            <i class="bi bi-search"></i> 청구항 검토
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="section-title mb-0">작성된 청구항</h6>
+                                        <button class="btn btn-outline-success btn-sm" onclick="exportClaims()">
+                                            <i class="bi bi-download"></i> 내보내기
+                                        </button>
+                                    </div>
+                                    <div id="claimsOutput" class="output-area" style="min-height: 400px;">
+                                        청구항이 여기에 표시됩니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OA 대응 섹션 -->
+                <div id="section-oa" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-envelope-paper"></i> OA(의견제출통지서) 대응</h4>
+
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#oa-input">OA 정보 입력</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#oa-analysis">거절이유 분석</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#oa-amendment">보정서/의견서</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="oa-input">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">출원 명세서</label>
+                                        <textarea class="form-control" id="oaSpecification" rows="5" placeholder="출원 명세서 내용..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">원 청구항</label>
+                                        <textarea class="form-control" id="oaOriginalClaims" rows="5" placeholder="원 청구항들 (각 청구항을 줄바꿈으로 구분)..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">의견제출통지서 내용</label>
+                                        <textarea class="form-control" id="oaRejectionNotice" rows="5" placeholder="심사관의 거절이유 내용..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">인용문헌 (각 인용문헌을 '---'로 구분)</label>
+                                        <textarea class="form-control" id="oaCitedDocs" rows="5" placeholder="인용문헌 1 내용&#10;---&#10;인용문헌 2 내용..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="oa-analysis">
+                            <div class="card">
+                                <div class="card-body">
+                                    <button class="btn btn-primary mb-3" onclick="analyzeRejection()">
+                                        <i class="bi bi-search"></i> 거절이유 분석
+                                        <span class="loading-spinner spinner-border spinner-border-sm ms-2"></span>
+                                    </button>
+                                    <div id="oaAnalysisOutput" class="output-area" style="min-height: 300px;">
+                                        분석 결과가 여기에 표시됩니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="oa-amendment">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">보정서</h6>
+                                            <button class="btn btn-primary mb-3" onclick="draftAmendedClaim()">
+                                                <i class="bi bi-pencil"></i> 청구항 1항 보정
+                                            </button>
+                                            <div id="oaAmendmentOutput" class="output-area">
+                                                보정된 청구항이 여기에 표시됩니다.
+                                            </div>
+                                            <button class="btn btn-outline-secondary btn-sm mt-2" onclick="compareClaims()">
+                                                <i class="bi bi-file-diff"></i> 원본과 비교
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="section-title">의견서</h6>
+                                            <button class="btn btn-primary mb-3" onclick="draftOpinion()">
+                                                <i class="bi bi-file-text"></i> 의견서 작성
+                                            </button>
+                                            <div id="oaOpinionOutput" class="output-area">
+                                                의견서가 여기에 표시됩니다.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 자동 워크플로우 섹션 -->
+                <div id="section-workflow" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-diagram-3"></i> 자동 워크플로우</h4>
+
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-input-cursor"></i> 입력 정보
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">발명의 명칭</label>
+                                        <input type="text" class="form-control" id="wfInventionTitle">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">발명 내용</label>
+                                        <textarea class="form-control" id="wfInventionContent" rows="8" placeholder="발명의 기술적 내용을 상세히 입력하세요..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">발명자 초안 (선택)</label>
+                                        <textarea class="form-control" id="wfInventorDraft" rows="4"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">AI 제공자</label>
+                                        <select class="form-select" id="wfProvider">
+                                            <option value="openai">OpenAI GPT-4</option>
+                                            <option value="anthropic">Anthropic Claude</option>
+                                            <option value="google">Google Gemini</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary btn-lg" onclick="runFullSpecificationWorkflow()">
+                                            <i class="bi bi-play-circle"></i> 전체 명세서 자동 작성 시작
+                                            <span class="loading-spinner spinner-border spinner-border-sm ms-2"></span>
+                                        </button>
+                                        <button class="btn btn-danger btn-lg" onclick="runOAResponseWorkflow()">
+                                            <i class="bi bi-envelope-paper"></i> OA 대응 자동화 시작
+                                            <span class="loading-spinner spinner-border spinner-border-sm ms-2"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-list-task"></i> 진행 상황
+                                </div>
+                                <div class="card-body">
+                                    <div id="workflowSteps">
+                                        <div class="text-muted text-center py-5">
+                                            워크플로우를 시작하면 진행 상황이 여기에 표시됩니다.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <i class="bi bi-file-earmark-text"></i> 최종 결과
+                                </div>
+                                <div class="card-body">
+                                    <div id="workflowResult" class="output-area" style="min-height: 300px;">
+                                        최종 결과가 여기에 표시됩니다.
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="downloadWorkflowResult()">
+                                            <i class="bi bi-download"></i> 결과 다운로드
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 프롬프트 관리 섹션 -->
+                <div id="section-prompts" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-chat-square-text"></i> 프롬프트 관리</h4>
+
+                    <div class="row" id="promptCategories">
+                        <!-- 프롬프트 카테고리가 동적으로 로드됩니다 -->
+                    </div>
+                </div>
+
+                <!-- AI 설정 섹션 -->
+                <div id="section-settings" class="content-section" style="display:none;">
+                    <h4 class="mb-4"><i class="bi bi-gear"></i> AI 설정</h4>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-key"></i> API 키 설정
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">OpenAI API Key</label>
+                                        <input type="password" class="form-control api-key-input" id="openaiApiKey" placeholder="sk-...">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Anthropic API Key</label>
+                                        <input type="password" class="form-control api-key-input" id="anthropicApiKey" placeholder="sk-ant-...">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Google API Key</label>
+                                        <input type="password" class="form-control api-key-input" id="googleApiKey">
+                                    </div>
+                                    <button class="btn btn-primary" onclick="saveApiKeys()">
+                                        <i class="bi bi-save"></i> 저장
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-cpu"></i> 기본 AI 제공자
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">기본 AI 제공자 선택</label>
+                                        <select class="form-select" id="defaultProvider">
+                                            <option value="openai">OpenAI GPT-4</option>
+                                            <option value="anthropic">Anthropic Claude</option>
+                                            <option value="google">Google Gemini</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">모델 선택</label>
+                                        <select class="form-select" id="defaultModel">
+                                            <option value="gpt-4o">GPT-4o</option>
+                                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                            <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="saveDefaultSettings()">
+                                        <i class="bi bi-save"></i> 저장
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 컨테이너 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 모달: HTML 코드 보기 -->
+    <div class="modal fade" id="codeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">HTML 코드</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre><code id="codeModalContent"></code></pre>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="copyModalCode()">
+                        <i class="bi bi-clipboard"></i> 복사
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 전역 변수
+        let currentProjectId = null;
+        let currentDrawingHtml = '';
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            createNewProject();
+            loadPromptCategories();
+            setupNavigation();
+        });
+
+        // 네비게이션 설정
+        function setupNavigation() {
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.dataset.section;
+                    showSection(section);
+                });
+            });
+        }
+
+        // 섹션 표시
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById('section-' + sectionId).style.display = 'block';
+
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.section === sectionId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // 새 프로젝트 생성
+        async function createNewProject() {
+            try {
+                const response = await fetch('/api/project/create', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    currentProjectId = data.project_id;
+                    document.getElementById('projectIdDisplay').textContent = '프로젝트: ' + currentProjectId;
+                    showToast('새 프로젝트가 생성되었습니다.', 'success');
+                }
+            } catch (error) {
+                showToast('프로젝트 생성 실패: ' + error.message, 'danger');
+            }
+        }
+
+        // API 호출 헬퍼
+        async function apiCall(endpoint, data = {}) {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...data, project_id: currentProjectId })
+            });
+            return await response.json();
+        }
+
+        // 명세서 섹션 작성
+        async function writeSection(sectionName) {
+            const context = document.getElementById('inventionContext').value;
+            if (!context) {
+                showToast('발명 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/specification/write-section', {
+                    section: sectionName,
+                    context: context
+                });
+
+                if (data.success) {
+                    document.getElementById('sectionOutput').textContent = data.content;
+                    showToast('섹션이 작성되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 전체 섹션 작성
+        async function writeAllSections() {
+            const context = document.getElementById('inventionContext').value;
+            if (!context) {
+                showToast('발명 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/specification/write-all', { context: context });
+
+                if (data.success) {
+                    let output = '';
+                    for (const [section, info] of Object.entries(data.sections)) {
+                        output += `【${section}】\n${info.content}\n\n`;
+                    }
+                    document.getElementById('sectionOutput').textContent = output;
+                    document.getElementById('fullSpecOutput').textContent = output;
+                    showToast('전체 섹션이 작성되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 명세서 내보내기
+        async function exportSpecification(format) {
+            window.open(`/api/specification/export?project_id=${currentProjectId}&format=${format}`, '_blank');
+        }
+
+        // 도면 계획
+        async function planDrawings() {
+            const context = document.getElementById('drawingContext').value;
+            if (!context) {
+                showToast('발명 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/drawing/plan', { context: context });
+
+                if (data.success) {
+                    document.getElementById('drawingPlanOutput').textContent = data.plan;
+                    showToast('도면 계획이 수립되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 도면 생성
+        async function generateDrawing() {
+            const context = document.getElementById('drawingContext').value || document.getElementById('inventionContext').value;
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/drawing/generate', {
+                    number: parseInt(document.getElementById('drawingNumber').value),
+                    info: {
+                        title: document.getElementById('drawingTitle').value,
+                        description: document.getElementById('drawingDescription').value,
+                        type: document.getElementById('drawingType').value
+                    },
+                    context: context
+                });
+
+                if (data.success) {
+                    currentDrawingHtml = data.html;
+                    document.getElementById('drawingPreview').innerHTML = data.html;
+                    showToast('도면이 생성되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 부호체계 생성
+        async function generateSymbolSystem() {
+            const context = document.getElementById('drawingContext').value || document.getElementById('inventionContext').value;
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/drawing/symbols', {
+                    drawings: [],
+                    context: context
+                });
+
+                if (data.success) {
+                    document.getElementById('symbolSystemOutput').textContent = data.content;
+                    showToast('부호체계가 생성되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 청구항 작성
+        async function writeClaims() {
+            const specification = document.getElementById('claimsSpecification').value;
+            if (!specification) {
+                showToast('명세서 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/claims/write', { specification: specification });
+
+                if (data.success) {
+                    document.getElementById('claimsOutput').textContent = data.claims;
+                    showToast('청구항이 작성되었습니다.', 'success');
+                } else {
+                    showToast('오류: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 청구항 검토
+        async function reviewClaims() {
+            const specification = document.getElementById('claimsSpecification').value;
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/claims/review', { specification: specification });
+
+                if (data.success) {
+                    document.getElementById('claimsOutput').textContent = data.review;
+                    showToast('청구항 검토가 완료되었습니다.', 'success');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 청구항 내보내기
+        function exportClaims() {
+            window.open(`/api/claims/export?project_id=${currentProjectId}&format=text`, '_blank');
+        }
+
+        // OA 거절이유 분석
+        async function analyzeRejection() {
+            const specification = document.getElementById('oaSpecification').value;
+            const rejectionNotice = document.getElementById('oaRejectionNotice').value;
+            const citedDocs = document.getElementById('oaCitedDocs').value.split('---').map(s => s.trim()).filter(s => s);
+
+            if (!rejectionNotice) {
+                showToast('의견제출통지서 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/oa/analyze', {
+                    specification: specification,
+                    rejection_notice: rejectionNotice,
+                    cited_docs: citedDocs
+                });
+
+                if (data.success) {
+                    document.getElementById('oaAnalysisOutput').textContent = data.analysis;
+                    showToast('거절이유 분석이 완료되었습니다.', 'success');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 청구항 보정
+        async function draftAmendedClaim() {
+            const specification = document.getElementById('oaSpecification').value;
+            const rejectionNotice = document.getElementById('oaRejectionNotice').value;
+            const citedDocs = document.getElementById('oaCitedDocs').value.split('---').map(s => s.trim()).filter(s => s);
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/oa/amend-claim', {
+                    claim_number: 1,
+                    specification: specification,
+                    rejection_notice: rejectionNotice,
+                    cited_docs: citedDocs
+                });
+
+                if (data.success) {
+                    document.getElementById('oaAmendmentOutput').textContent = data.amended_claim;
+                    showToast('청구항 보정이 완료되었습니다.', 'success');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 의견서 작성
+        async function draftOpinion() {
+            const specification = document.getElementById('oaSpecification').value;
+            const rejectionNotice = document.getElementById('oaRejectionNotice').value;
+            const citedDocs = document.getElementById('oaCitedDocs').value.split('---').map(s => s.trim()).filter(s => s);
+            const amendedClaim = document.getElementById('oaAmendmentOutput').textContent;
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/oa/opinion', {
+                    amended_claims: [amendedClaim],
+                    specification: specification,
+                    rejection_notice: rejectionNotice,
+                    cited_docs: citedDocs
+                });
+
+                if (data.success) {
+                    document.getElementById('oaOpinionOutput').textContent = data.opinion;
+                    showToast('의견서 작성이 완료되었습니다.', 'success');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 청구항 비교
+        async function compareClaims() {
+            const original = document.getElementById('oaOriginalClaims').value.split('\n')[0];
+            const amended = document.getElementById('oaAmendmentOutput').textContent;
+
+            setLoading(true);
+            try {
+                const data = await apiCall('/api/oa/compare-claims', {
+                    original: original,
+                    amended: amended
+                });
+
+                if (data.success) {
+                    showToast('비교 결과가 보정서 영역에 표시됩니다.', 'info');
+                    document.getElementById('oaAmendmentOutput').innerHTML = data.comparison.replace(/\*\*(.*?)\*\*/g, '<strong style="color:green">$1</strong>');
+                }
+            } catch (error) {
+                showToast('API 호출 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // 전체 명세서 워크플로우
+        async function runFullSpecificationWorkflow() {
+            const title = document.getElementById('wfInventionTitle').value;
+            const content = document.getElementById('wfInventionContent').value;
+            const inventorDraft = document.getElementById('wfInventorDraft').value;
+            const provider = document.getElementById('wfProvider').value;
+
+            if (!content) {
+                showToast('발명 내용을 입력해주세요.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            updateWorkflowSteps([
+                { step: '발명 정보 설정', status: 'in-progress' },
+                { step: '도면 계획', status: 'pending' },
+                { step: '부호체계 생성', status: 'pending' },
+                { step: '명세서 작성', status: 'pending' },
+                { step: '청구항 작성', status: 'pending' }
+            ]);
+
+            try {
+                const data = await apiCall('/api/workflow/full-specification', {
+                    invention_info: { title: title, name: title },
+                    inventor_draft: inventorDraft,
+                    provider: provider
+                });
+
+                if (data.success) {
+                    updateWorkflowSteps(data.results.steps.map(s => ({
+                        step: s.step,
+                        status: s.status
+                    })));
+
+                    let result = '';
+                    if (data.results.specification) {
+                        result += '【명세서】\n' + data.results.specification + '\n\n';
+                    }
+                    if (data.results.claims) {
+                        result += data.results.claims + '\n\n';
+                    }
+                    if (data.results.symbol_system) {
+                        result += data.results.symbol_system;
+                    }
+
+                    document.getElementById('workflowResult').textContent = result;
+                    showToast('명세서 작성이 완료되었습니다!', 'success');
+                } else {
+                    showToast('오류: ' + data.results.error, 'danger');
+                }
+            } catch (error) {
+                showToast('워크플로우 실행 실패: ' + error.message, 'danger');
+            }
+            setLoading(false);
+        }
+
+        // OA 대응 워크플로우
+        async function runOAResponseWorkflow() {
+            showToast('OA 대응 워크플로우를 시작합니다. OA 정보를 먼저 입력해주세요.', 'info');
+            showSection('oa');
+        }
+
+        // 워크플로우 단계 업데이트
+        function updateWorkflowSteps(steps) {
+            const container = document.getElementById('workflowSteps');
+            container.innerHTML = steps.map(s => `
+                <div class="workflow-step ${s.status}">
+                    <i class="bi bi-${s.status === 'completed' ? 'check-circle-fill text-success' : s.status === 'in-progress' ? 'arrow-repeat text-primary' : 'circle text-muted'}"></i>
+                    <strong>${s.step}</strong>
+                    ${s.content ? `<div class="small text-muted mt-1">${s.content.substring(0, 100)}...</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 결과 다운로드
+        function downloadWorkflowResult() {
+            const content = document.getElementById('workflowResult').textContent;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `patent_specification_${currentProjectId}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 프롬프트 카테고리 로드
+        async function loadPromptCategories() {
+            try {
+                const response = await fetch('/api/prompts/categories');
+                const data = await response.json();
+
+                if (data.success) {
+                    const container = document.getElementById('promptCategories');
+                    container.innerHTML = Object.entries(data.categories).map(([key, cat]) => `
+                        <div class="col-md-4 mb-3">
+                            <div class="card prompt-card h-100" onclick="showCategoryPrompts('${key}')">
+                                <div class="card-body">
+                                    <h5 class="card-title">${cat.name}</h5>
+                                    <p class="card-text text-muted small">${cat.description}</p>
+                                    <span class="badge bg-secondary">${cat.prompts.length}개 프롬프트</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('프롬프트 카테고리 로드 실패:', error);
+            }
+        }
+
+        // 카테고리 프롬프트 표시
+        async function showCategoryPrompts(category) {
+            try {
+                const response = await fetch(`/api/prompts/${category}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // 모달이나 새 섹션으로 표시
+                    alert('프롬프트 목록:\n' + Object.keys(data.prompts.prompts).join('\n'));
+                }
+            } catch (error) {
+                showToast('프롬프트 로드 실패: ' + error.message, 'danger');
+            }
+        }
+
+        // API 키 저장
+        function saveApiKeys() {
+            const openai = document.getElementById('openaiApiKey').value;
+            const anthropic = document.getElementById('anthropicApiKey').value;
+            const google = document.getElementById('googleApiKey').value;
+
+            // 실제 구현에서는 서버에 안전하게 저장
+            localStorage.setItem('openai_api_key', openai);
+            localStorage.setItem('anthropic_api_key', anthropic);
+            localStorage.setItem('google_api_key', google);
+
+            showToast('API 키가 저장되었습니다.', 'success');
+        }
+
+        // 기본 설정 저장
+        function saveDefaultSettings() {
+            const provider = document.getElementById('defaultProvider').value;
+            const model = document.getElementById('defaultModel').value;
+
+            localStorage.setItem('default_provider', provider);
+            localStorage.setItem('default_model', model);
+
+            showToast('설정이 저장되었습니다.', 'success');
+        }
+
+        // HTML 코드 보기
+        function showDrawingCode() {
+            document.getElementById('codeModalContent').textContent = currentDrawingHtml;
+            new bootstrap.Modal(document.getElementById('codeModal')).show();
+        }
+
+        // 모달 코드 복사
+        function copyModalCode() {
+            navigator.clipboard.writeText(currentDrawingHtml);
+            showToast('코드가 복사되었습니다.', 'success');
+        }
+
+        // 클립보드 복사
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text);
+            showToast('복사되었습니다.', 'success');
+        }
+
+        // 로딩 상태
+        function setLoading(isLoading) {
+            document.querySelectorAll('.loading-spinner').forEach(spinner => {
+                spinner.style.display = isLoading ? 'inline-block' : 'none';
+            });
+            document.querySelectorAll('button').forEach(btn => {
+                btn.disabled = isLoading;
+            });
+        }
+
+        // 토스트 메시지
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            new bootstrap.Toast(toast, { delay: 3000 }).show();
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>
