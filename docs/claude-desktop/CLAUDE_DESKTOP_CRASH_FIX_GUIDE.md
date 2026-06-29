@@ -1,3 +1,16 @@
+---
+title: "Claude Desktop 실행 즉시 종료 문제 해결 (Windows)"
+date: 2026-02-10
+updated: 2026-04-09
+category: troubleshoot
+tags: [claude-desktop, windows, troubleshoot, fix, crash]
+status: active
+summary: "Windows에서 Claude Desktop 실행 직후 종료되는 문제의 원인별 해결 방법"
+related:
+  - docs/claude-desktop/claude-desktop-outage-report-2026-02-10.md
+  - docs/claude-desktop/CLAUDE_DESKTOP_크래시_근본해결.md
+---
+
 # Claude Desktop 실행 즉시 종료 문제 해결 가이드 (Windows)
 
 ## 문제 현상

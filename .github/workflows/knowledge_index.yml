@@ -1,0 +1,43 @@
+name: Knowledge Index 자동 갱신
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**/*.md'
+      - 'scripts/build_knowledge_index.py'
+  workflow_dispatch:
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build knowledge index
+        run: python scripts/build_knowledge_index.py
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet docs/KNOWLEDGE_INDEX.md && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push index
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/KNOWLEDGE_INDEX.md
+          git commit -m "chore: knowledge index 자동 갱신 [$(date +'%Y-%m-%d')]"
+          git push origin master

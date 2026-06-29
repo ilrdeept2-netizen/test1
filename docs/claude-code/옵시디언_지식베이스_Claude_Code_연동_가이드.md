@@ -1,3 +1,15 @@
+---
+title: "Obsidian × Claude Code 연동: 토큰 낭비 없는 개인 지식 베이스 구축"
+date: 2026-02-27
+category: claude-code
+tags: [claude-code, obsidian, knowledge-db, rag, workflow, setup]
+status: active
+summary: "Obsidian 볼트를 Claude Code와 연결해 컨텍스트 낭비 없이 축적된 지식을 활용하는 방법"
+related:
+  - docs/claude-code/OpenClaw_Google_Embedding_설정_가이드.md
+  - docs/claude-code/Claude_Code_플러그인_MCP_연동_정리.md
+---
+
 # 옵시디언 × Claude Code: 토큰 낭비 없는 나만의 지식 베이스
 
 > 작성일: 2026-02-27

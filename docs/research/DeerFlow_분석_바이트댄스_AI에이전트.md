@@ -1,3 +1,16 @@
+---
+title: "DeerFlow 분석: ByteDance 오픈소스 AI 슈퍼에이전트 하네스"
+date: 2026-03-01
+category: ai-research
+tags: [agent, multi-agent, llm, open-source, analysis, deerflow]
+status: active
+summary: "ByteDance가 공개한 MIT 라이선스 AI 에이전트 하네스 DeerFlow 구조 및 특징 분석"
+source: "https://github.com/bytedance/deer-flow"
+related:
+  - docs/research/ai-wrapper-strategy.md
+  - docs/claude-code/Claude_Code_Agent_Teams_가이드.md
+---
+
 # DeerFlow 분석: ByteDance의 오픈소스 AI 에이전트
 
 > ByteDance(틱톡 모회사)가 공개한 AI 슈퍼에이전트 하네스

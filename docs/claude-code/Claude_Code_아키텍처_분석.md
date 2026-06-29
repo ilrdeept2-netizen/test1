@@ -1,3 +1,15 @@
+---
+title: "Claude Code 아키텍처 분석: 설계 원리 8가지"
+date: 2026-04-01
+category: claude-code
+tags: [claude-code, architecture, context-window, agent, analysis]
+status: active
+summary: "소셜 미디어에서 공유된 Claude Code 설계 원리 8가지 분석 — 비용 최적화, 내부 도구 분기, 다중 에이전트 등"
+related:
+  - docs/claude-code/Claude_Code_Agent_Teams_가이드.md
+  - docs/claude-code/Claude_Code_플러그인_MCP_연동_정리.md
+---
+
 # Claude Code 아키텍처 분석
 
 > 소셜 미디어에서 공유된 Claude Code의 설계 원리 및 핵심 구동 방식 8가지에 대한 분석 정리
